@@ -5,6 +5,13 @@
 #include <string.h>
 #include <stdio.h>
 
+static size_t chomsky3_safe_strnlen(const char *str, size_t maxlen)
+{
+    size_t i;
+    for (i = 0; i < maxlen && str[i] != '\0'; ++i) {}
+    return i;
+}
+
 /* Memory tracking structure */
 typedef struct memory_block {
     void *ptr;
@@ -192,7 +199,7 @@ char *chomsky3_strndup_internal(const char *str, size_t n, const char *file, int
         return NULL;
     }
 
-    size_t len = strnlen(str, n);
+    size_t len = chomsky3_safe_strnlen(str, n);
     char *dup = chomsky3_malloc_internal(len + 1, file, line, function);
     if (!dup) {
         return NULL;
@@ -295,7 +302,7 @@ void chomsky3_memory_reset_stats(void) {
 /* Create memory pool */
 chomsky3_memory_pool_t *chomsky3_memory_pool_create(size_t size, size_t alignment) {
     if (size == 0) {
-        chomsky3_set_error(CHOMSKY3_ERROR_INVALID_ARGUMENT, "Pool size cannot be zero");
+        chomsky3_set_error(CHOMSKY3_ERROR_INVALID_ARGUMENT, "Pool size cannot be zero", NULL);
         return NULL;
     }
 
@@ -305,14 +312,14 @@ chomsky3_memory_pool_t *chomsky3_memory_pool_create(size_t size, size_t alignmen
 
     chomsky3_memory_pool_t *pool = malloc(sizeof(chomsky3_memory_pool_t));
     if (!pool) {
-        chomsky3_set_error(CHOMSKY3_ERROR_OUT_OF_MEMORY, "Failed to allocate memory pool");
+        chomsky3_set_error(CHOMSKY3_ERROR_OUT_OF_MEMORY, "Failed to allocate memory pool", NULL);
         return NULL;
     }
 
     pool->memory = malloc(size);
     if (!pool->memory) {
         free(pool);
-        chomsky3_set_error(CHOMSKY3_ERROR_OUT_OF_MEMORY, "Failed to allocate pool memory");
+        chomsky3_set_error(CHOMSKY3_ERROR_OUT_OF_MEMORY, "Failed to allocate pool memory", NULL);
         return NULL;
     }
 
@@ -399,7 +406,7 @@ void chomsky3_memory_pool_get_stats(chomsky3_memory_pool_t *pool,
 /* Safe memcpy with bounds checking */
 int chomsky3_memcpy_safe(void *dest, size_t dest_size, const void *src, size_t count) {
     if (!dest || !src) {
-        chomsky3_set_error(CHOMSKY3_ERROR_INVALID_ARGUMENT, "NULL pointer in memcpy");
+        chomsky3_set_error(CHOMSKY3_ERROR_INVALID_ARGUMENT, "NULL pointer in memcpy", NULL);
         return -1;
     }
 
@@ -417,7 +424,7 @@ int chomsky3_memcpy_safe(void *dest, size_t dest_size, const void *src, size_t c
 /* Safe memmove with bounds checking */
 int chomsky3_memmove_safe(void *dest, size_t dest_size, const void *src, size_t count) {
     if (!dest || !src) {
-        chomsky3_set_error(CHOMSKY3_ERROR_INVALID_ARGUMENT, "NULL pointer in memmove");
+        chomsky3_set_error(CHOMSKY3_ERROR_INVALID_ARGUMENT, "NULL pointer in memmove", NULL);
         return -1;
     }
 
@@ -435,7 +442,7 @@ int chomsky3_memmove_safe(void *dest, size_t dest_size, const void *src, size_t 
 /* Safe memset with bounds checking */
 int chomsky3_memset_safe(void *dest, size_t dest_size, int value, size_t count) {
     if (!dest) {
-        chomsky3_set_error(CHOMSKY3_ERROR_INVALID_ARGUMENT, "NULL pointer in memset");
+        chomsky3_set_error(CHOMSKY3_ERROR_INVALID_ARGUMENT, "NULL pointer in memset", NULL);
         return -1;
     }
 

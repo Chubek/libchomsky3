@@ -47,10 +47,14 @@ if(CHOMSKY3_ENABLE_JIT)
 
         add_library(sljit STATIC
             ${SLJIT_DIR}/sljit_src/sljitLir.c
+            ${SLJIT_DIR}/regex_src/regexJIT.c
+            ${SLJIT_DIR}/regex_src/regexMain.c
         )
 
         target_include_directories(sljit PUBLIC
+            ${CMAKE_CURRENT_SOURCE_DIR}/third_party
             ${SLJIT_DIR}/sljit_src
+            ${SLJIT_DIR}/regex_src
         )
 
         target_compile_definitions(sljit PRIVATE
@@ -104,6 +108,12 @@ target_link_libraries(chomsky3 PRIVATE m)
 
 if(TARGET sljit)
     target_link_libraries(chomsky3 PRIVATE sljit)
+    target_include_directories(chomsky3 PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party
+        ${SLJIT_DIR}
+        ${SLJIT_DIR}/sljit_src
+        ${SLJIT_DIR}/regex_src
+    )
     target_compile_definitions(chomsky3 PUBLIC CHOMSKY3_HAS_JIT=1)
 else()
     message(STATUS "CHOMSKY3_HAS_JIT disabled: SLJIT target unavailable")

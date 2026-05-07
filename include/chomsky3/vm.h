@@ -26,15 +26,7 @@ typedef struct chomsky3_vm_state chomsky3_vm_state_t;
 typedef struct chomsky3_vm_snapshot chomsky3_vm_snapshot_t;
 typedef struct chomsky3_vm_trace chomsky3_vm_trace_t;
 
-/* VM execution mode */
-typedef enum {
-    CHOMSKY3_VM_MODE_NORMAL = 0,    /* Normal execution */
-    CHOMSKY3_VM_MODE_TRACE = 1,     /* Trace execution */
-    CHOMSKY3_VM_MODE_DEBUG = 2,     /* Debug mode with breakpoints */
-    CHOMSKY3_VM_MODE_PROFILE = 3,   /* Profiling mode */
-    CHOMSKY3_VM_MODE_SAFE = 4       /* Safe mode with extra checks */
-} chomsky3_vm_mode_t;
-
+/* Note: chomsky3_vm_mode_t, chomsky3_vm_limits_t, chomsky3_vm_stats_t defined in bytecode.h */
 /* VM execution flags */
 typedef enum {
     CHOMSKY3_VM_FLAG_NONE = 0,
@@ -50,15 +42,6 @@ typedef enum {
     CHOMSKY3_VM_FLAG_CAPTURE = (1 << 9),       /* Enable capture groups */
     CHOMSKY3_VM_FLAG_OPTIMIZE = (1 << 10)      /* Enable runtime optimizations */
 } chomsky3_vm_flags_t;
-
-/* VM resource limits */
-typedef struct {
-    size_t max_stack_depth;         /* Maximum stack depth */
-    size_t max_backtrack_count;     /* Maximum backtrack operations */
-    size_t max_steps;               /* Maximum execution steps */
-    uint64_t max_time_ns;           /* Maximum execution time (nanoseconds) */
-    size_t max_memory;              /* Maximum memory usage */
-} chomsky3_vm_limits_t;
 
 /* VM configuration */
 struct chomsky3_vm_config {
@@ -84,55 +67,6 @@ struct chomsky3_vm_config {
     void (*error_callback)(chomsky3_error_t err, void *user_data);
     void *user_data;                /* User data for callbacks */
 };
-
-/* VM execution state */
-struct chomsky3_vm_state {
-    /* Current position */
-    const char *input;              /* Input string */
-    size_t input_length;            /* Input length */
-    size_t position;                /* Current position */
-    
-    /* Match state */
-    size_t match_start;             /* Match start position */
-    size_t match_end;               /* Match end position */
-    bool matched;                   /* Match found flag */
-    
-    /* Capture groups */
-    size_t *capture_starts;         /* Capture start positions */
-    size_t *capture_ends;           /* Capture end positions */
-    size_t num_captures;            /* Number of captures */
-    
-    /* Execution state */
-    size_t pc;                      /* Program counter */
-    size_t stack_depth;             /* Current stack depth */
-    size_t backtrack_count;         /* Backtrack count */
-    size_t step_count;              /* Step count */
-    
-    /* Flags */
-    bool partial_match;             /* Partial match flag */
-    bool timeout;                   /* Timeout flag */
-    bool error;                     /* Error flag */
-};
-
-/* VM execution statistics */
-typedef struct {
-    uint64_t total_steps;           /* Total steps executed */
-    uint64_t total_backtracks;      /* Total backtracks */
-    uint64_t max_stack_depth;       /* Maximum stack depth reached */
-    uint64_t execution_time_ns;     /* Execution time */
-    
-    /* Instruction counts */
-    uint64_t *opcode_counts;        /* Count per opcode */
-    size_t num_opcodes;             /* Number of opcodes */
-    
-    /* Memory usage */
-    size_t peak_memory;             /* Peak memory usage */
-    size_t current_memory;          /* Current memory usage */
-    
-    /* Cache statistics */
-    uint64_t cache_hits;            /* Cache hits */
-    uint64_t cache_misses;          /* Cache misses */
-} chomsky3_vm_stats_t;
 
 /* VM snapshot for state save/restore */
 struct chomsky3_vm_snapshot {
@@ -166,12 +100,7 @@ struct chomsky3_vm_trace {
  */
 void chomsky3_vm_config_default(chomsky3_vm_config_t *config);
 
-/**
- * Get default VM limits.
- * 
- * @param limits Limits structure to fill
- */
-void chomsky3_vm_limits_default(chomsky3_vm_limits_t *limits);
+/* Note: chomsky3_vm_limits_default declared in bytecode.h */
 
 /**
  * Create a new VM instance.
@@ -318,15 +247,8 @@ chomsky3_error_t chomsky3_vm_snapshot_restore(
 void chomsky3_vm_snapshot_free(chomsky3_vm_snapshot_t *snapshot);
 
 /**
- * Get VM execution statistics.
- * 
- * @param vm VM instance
- * @param stats Output statistics structure
+ * Note: chomsky3_vm_get_stats declared in bytecode.h
  */
-void chomsky3_vm_get_stats(
-    const chomsky3_vm_t *vm,
-    chomsky3_vm_stats_t *stats
-);
 
 /**
  * Reset VM statistics.
@@ -481,16 +403,8 @@ void chomsky3_vm_get_limits(
 );
 
 /**
- * Set VM limits.
- * 
- * @param vm VM instance
- * @param limits New limits
- * @return Error code
+ * Note: chomsky3_vm_set_limits declared in bytecode.h (returns void)
  */
-chomsky3_error_t chomsky3_vm_set_limits(
-    chomsky3_vm_t *vm,
-    const chomsky3_vm_limits_t *limits
-);
 
 /* Utility functions */
 

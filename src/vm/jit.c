@@ -118,28 +118,6 @@ struct chomsky3_jit_compiler {
     size_t num_saved_regs;
 };
 
-/* JIT-compiled code */
-struct chomsky3_jit_code {
-    chomsky3_jit_func_t func;
-    void *code_ptr;
-    size_t code_size;
-    
-    chomsky3_arch_t arch;
-    uint32_t flags;
-    
-    uint64_t compile_time_ns;
-    size_t bytecode_size;
-    float speedup_factor;
-    
-    void *debug_info;
-    size_t debug_info_size;
-    
-    char *cache_key;
-    uint64_t cache_timestamp;
-    
-    int ref_count;
-};
-
 /* Forward declarations */
 static chomsky3_error_t jit_compile_bytecode(
     chomsky3_jit_compiler_t *compiler,
@@ -148,7 +126,7 @@ static chomsky3_error_t jit_compile_bytecode(
 );
 
 static uint64_t get_time_ns(void);
-static void compute_sha256_hex(const uint8_t *data, size_t len, char *output);
+/* static void compute_sha256_hex(const uint8_t *data, size_t len, char *output); */
 
 /* ========================================================================
  * Configuration and Initialization
@@ -259,7 +237,7 @@ chomsky3_jit_compiler_t *chomsky3_jit_compiler_create(
     }
     
     /* Create SLJIT compiler */
-    compiler->sljit = sljit_create_compiler(NULL, NULL);
+    compiler->sljit = sljit_create_compiler(NULL);
     if (!compiler->sljit) {
         chomsky3_free(compiler);
         return NULL;
@@ -273,7 +251,7 @@ chomsky3_jit_compiler_t *chomsky3_jit_compiler_create(
             compiler->cache->policy = compiler->config.cache_policy;
             compiler->cache->max_size = compiler->config.cache_size;
             if (compiler->config.cache_dir) {
-                compiler->cache->cache_dir = strdup(compiler->config.cache_dir);
+                compiler->cache->cache_dir = chomsky3_strdup(compiler->config.cache_dir);
             }
         }
     }
@@ -397,7 +375,7 @@ chomsky3_error_t chomsky3_jit_compile_ex(
     if (compiler->cache) {
         char cache_key[65];
         chomsky3_jit_cache_key(bytecode, flags, opt_level, cache_key, sizeof(cache_key));
-        new_code->cache_key = strdup(cache_key);
+        new_code->cache_key = chomsky3_strdup(cache_key);
         new_code->cache_timestamp = end_time;
         chomsky3_jit_cache_put(compiler, cache_key, new_code);
     }
@@ -416,12 +394,10 @@ static chomsky3_error_t jit_compile_bytecode(
     
     /* Function prologue */
     sljit_emit_enter(c, 0,
-        SLJIT_ARGS8(W, P, W, W, P, P, P, W, P), /* 8 arguments */
+        SLJIT_ARGS4(W, W, P, W, P), /* 4 arguments */
         3, /* 3 scratch registers */
         3, /* 3 saved registers */
-        0, /* no float registers */
-        0, /* no local size */
-        compiler->config.stack_size
+        0  /* no float registers */
     );
     
     /* Register allocation:
@@ -449,7 +425,7 @@ static chomsky3_error_t jit_compile_bytecode(
      */
     
     /* Simple example: always return success with match at offset 0 */
-    struct sljit_label *success_label = sljit_emit_label(c);
+    /* struct sljit_label *success_label = */ sljit_emit_label(c);
     
     /* Set match_start = offset */
     sljit_emit_op1(c, SLJIT_MOV, SLJIT_R0, 0, SLJIT_S2, 0);
@@ -465,18 +441,17 @@ static chomsky3_error_t jit_compile_bytecode(
     sljit_emit_return(c, SLJIT_MOV, SLJIT_IMM, 1);
     
     /* Generate code */
-    void *code_ptr = sljit_generate_code(c, 0);
+    sljit_s32 code_size = 0;
+    void *code_ptr = sljit_generate_code(c, 0, &code_size);
     if (!code_ptr) {
         return CHOMSKY3_ERROR_COMPILATION_FAILED;
     }
     
-    size_t code_size = sljit_get_generated_code_size(c);
     
     /* Store in code structure */
-    code->func = (chomsky3_jit_func_t)code_ptr;
     code->code_ptr = code_ptr;
     code->code_size = code_size;
-    code->bytecode_size = bytecode ? bytecode->size : 0;
+    code->bytecode_size = bytecode ? bytecode->header.num_instructions : 0;
     code->speedup_factor = 2.0f; /* Estimated */
     
     return CHOMSKY3_OK;
@@ -493,14 +468,19 @@ chomsky3_error_t chomsky3_jit_execute(
     size_t offset,
     chomsky3_match_t **match
 ) {
-    if (!code || !code->func || !input || !match) {
+    if (!code || !code->code_ptr || !input || !match) {
         return CHOMSKY3_ERROR_INVALID_ARGUMENT;
     }
     
     size_t match_start = 0;
     size_t match_end = 0;
+    const chomsky3_jit_func_t func =
+        (chomsky3_jit_func_t)(uintptr_t)SLJIT_FUNC_ADDR(code->code_ptr);
+    if (!func) {
+        return CHOMSKY3_ERROR_INTERNAL;
+    }
     
-    int result = code->func(
+    int result = func(
         input, length, offset,
         &match_start, &match_end,
         NULL, 0, NULL
@@ -517,11 +497,11 @@ chomsky3_error_t chomsky3_jit_execute(
         return CHOMSKY3_ERROR_OUT_OF_MEMORY;
     }
     
-    m->start = match_start;
-    m->end = match_end;
-    m->length = match_end - match_start;
-    m->num_captures = 0;
-    m->captures = NULL;
+    m->start = (match_start <= length) ? input + match_start : NULL;
+    m->end = (match_end <= length) ? input + match_end : NULL;
+    m->length = (match_end >= match_start) ? (match_end - match_start) : 0;
+    m->num_groups = 0;
+    m->groups = NULL;
     
     *match = m;
     return CHOMSKY3_OK;
@@ -536,14 +516,20 @@ chomsky3_error_t chomsky3_jit_execute_captures(
     size_t num_captures,
     chomsky3_match_t **match
 ) {
-    if (!code || !code->func || !input || !match) {
+    if (!code || !code->code_ptr || !input || !match) {
         return CHOMSKY3_ERROR_INVALID_ARGUMENT;
     }
     
     size_t match_start = 0;
     size_t match_end = 0;
+    size_t captured_pairs = num_captures / 2u;
+    const chomsky3_jit_func_t func =
+        (chomsky3_jit_func_t)(uintptr_t)SLJIT_FUNC_ADDR(code->code_ptr);
+    if (!func) {
+        return CHOMSKY3_ERROR_INTERNAL;
+    }
     
-    int result = code->func(
+    int result = func(
         input, length, offset,
         &match_start, &match_end,
         captures, num_captures, NULL
@@ -559,18 +545,24 @@ chomsky3_error_t chomsky3_jit_execute_captures(
         return CHOMSKY3_ERROR_OUT_OF_MEMORY;
     }
     
-    m->start = match_start;
-    m->end = match_end;
-    m->length = match_end - match_start;
-    m->num_captures = num_captures / 2;
+    m->start = (match_start <= length) ? input + match_start : NULL;
+    m->end = (match_end <= length) ? input + match_end : NULL;
+    m->length = (match_end >= match_start) ? (match_end - match_start) : 0;
+    m->num_groups = captured_pairs;
     
     if (num_captures > 0) {
-        m->captures = chomsky3_malloc(num_captures * sizeof(size_t));
-        if (m->captures) {
-            memcpy(m->captures, captures, num_captures * sizeof(size_t));
+        m->groups = chomsky3_malloc(captured_pairs * sizeof(*m->groups));
+        if (m->groups) {
+            for (size_t i = 0; i < captured_pairs; ++i) {
+                size_t group_start = captures[i * 2u];
+                size_t group_end = captures[i * 2u + 1u];
+                m->groups[i].start = (group_start <= length) ? input + group_start : NULL;
+                m->groups[i].end = (group_end <= length) ? input + group_end : NULL;
+                m->groups[i].length = (group_end >= group_start) ? (group_end - group_start) : 0;
+            }
         }
     } else {
-        m->captures = NULL;
+        m->groups = NULL;
     }
     
     *match = m;
@@ -641,7 +633,7 @@ chomsky3_error_t chomsky3_jit_cache_enable(
         if (compiler->cache->cache_dir) {
             free(compiler->cache->cache_dir);
         }
-        compiler->cache->cache_dir = strdup(cache_dir);
+        compiler->cache->cache_dir = chomsky3_strdup(cache_dir);
     }
     
     return CHOMSKY3_OK;
@@ -730,7 +722,7 @@ chomsky3_error_t chomsky3_jit_cache_put(
         return CHOMSKY3_ERROR_OUT_OF_MEMORY;
     }
     
-    entry->key = strdup(cache_key);
+    entry->key = chomsky3_strdup(cache_key);
     entry->code = (chomsky3_jit_code_t *)code;
     chomsky3_jit_code_ref(entry->code);
     entry->timestamp = get_time_ns();
@@ -769,4 +761,38 @@ chomsky3_error_t chomsky3_jit_cache_put(
     return CHOMSKY3_OK;
 }
 
-chomsky3_
+chomsky3_error_t chomsky3_jit_cache_key(
+    const chomsky3_bytecode_t *bytecode,
+    chomsky3_jit_flags_t flags,
+    chomsky3_jit_opt_level_t opt_level,
+    char *output,
+    size_t output_size)
+{
+    (void)bytecode;
+    (void)flags;
+    (void)opt_level;
+    if (!output || output_size == 0) {
+        return CHOMSKY3_ERROR_INVALID_ARGUMENT;
+    }
+    snprintf(output, output_size, "cache_key_stub");
+    return CHOMSKY3_OK;
+}
+
+void chomsky3_jit_get_stats(
+    const chomsky3_jit_compiler_t *compiler,
+    chomsky3_jit_stats_t *stats)
+{
+    if (!compiler || !stats) {
+        return;
+    }
+    memset(stats, 0, sizeof(*stats));
+}
+
+void chomsky3_jit_reset_stats(chomsky3_jit_compiler_t *compiler)
+{
+    (void)compiler;
+}
+
+static uint64_t get_time_ns(void) {
+    return (uint64_t)((double)clock() * 1000000000.0 / (double)CLOCKS_PER_SEC);
+}

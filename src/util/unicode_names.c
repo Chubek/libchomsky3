@@ -1,5 +1,5 @@
 /* src/unicode_names.c - Unicode name lookup for error reporting */
-#include "chomsky3.h"
+#include "chomsky3/chomsky3.h"
 #include <string.h>
 
 /* Include the generated table in exactly ONE translation unit */

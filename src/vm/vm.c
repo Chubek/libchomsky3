@@ -8,26 +8,7 @@
 #include <ctype.h>
 #include <assert.h>
 
-/* Forward declarations for missing structures - reasonable assumptions */
-typedef struct chomsky3_match {
-    const char *input;           /* Input string being matched */
-    size_t input_len;            /* Length of input */
-    size_t *captures;            /* Capture group positions (start/end pairs) */
-    size_t num_captures;         /* Number of capture groups */
-    size_t match_start;          /* Start position of match */
-    size_t match_end;            /* End position of match */
-    int matched;                 /* Whether match succeeded */
-} chomsky3_match_t;
-
-typedef struct chomsky3_context {
-    chomsky3_allocator_t *allocator;  /* Memory allocator */
-    chomsky3_error_handler_t error_handler;  /* Error callback */
-    void *user_data;             /* User context data */
-    uint32_t flags;              /* Execution flags */
-    size_t max_stack_depth;      /* Stack depth limit */
-    size_t max_backtrack;        /* Backtracking limit */
-} chomsky3_context_t;
-
+/* Note: Types are defined in headers */
 /* VM execution state */
 typedef struct vm_state {
     const chomsky3_bytecode_t *bytecode;
@@ -71,7 +52,7 @@ typedef struct vm_state {
 } vm_state_t;
 
 /* Helper: Initialize VM state */
-static int vm_state_init(vm_state_t *state, const chomsky3_bytecode_t *bytecode,
+static int __attribute__((unused)) vm_state_init(vm_state_t *state, const chomsky3_bytecode_t *bytecode,
                          const char *input, size_t input_len, uint32_t flags) {
     memset(state, 0, sizeof(*state));
     
@@ -119,7 +100,7 @@ static int vm_state_init(vm_state_t *state, const chomsky3_bytecode_t *bytecode,
 }
 
 /* Helper: Cleanup VM state */
-static void vm_state_cleanup(vm_state_t *state) {
+static void __attribute__((unused)) vm_state_cleanup(vm_state_t *state) {
     free(state->stack);
     free(state->call_stack);
     free(state->backtrack_stack);
@@ -206,14 +187,14 @@ static int check_char_class(char c, uint32_t class_id) {
 }
 
 /* Main VM interpreter loop */
-static int vm_execute_internal(vm_state_t *state) {
+static int __attribute__((unused)) vm_execute_internal(vm_state_t *state) {
     size_t pc = 0;
     const chomsky3_instruction_t *instructions = state->bytecode->instructions;
-    size_t num_instructions = state->bytecode->header.instruction_count;
+    size_t num_instructions = state->bytecode->header.num_instructions;
     
     while (pc < num_instructions) {
         const chomsky3_instruction_t *inst = &instructions[pc];
-        state->stats.instructions_executed++;
+        state->stats.steps_executed++;
         
         switch (inst->opcode) {
             case CHOMSKY3_OP_CHAR: {
@@ -451,7 +432,7 @@ static int vm_execute_internal(vm_state_t *state) {
                 break;
             }
             
-            case CHOMSKY3_OP_ANCHOR_WORD_BOUNDARY: {
+            case CHOMSKY3_OP_ANCHOR_WORD: {
                 /* Match word boundary */
                 int before_word = (state->input_pos > 0 && isalnum(state->input[state->input_pos - 1]));
                 int after_word = (state->input_pos < state->input_len && isalnum(state->input[state->input_pos]));
@@ -465,7 +446,7 @@ static int vm_execute_internal(vm_state_t *state) {
                 break;
             }
             
-            case CHOMSKY3_OP_ANCHOR_NOT_WORD_BOUNDARY: {
+            case CHOMSKY3_OP_ANCHOR_NWORD: {
                 /* Match non-word boundary */
                 int before_word = (state->input_pos > 0 && isalnum(state->input[state->input_pos - 1]));
                 int after_word = (state->input_pos < state->input_len && isalnum(state->input[state->input_pos]));
@@ -505,7 +486,7 @@ static int vm_execute_internal(vm_state_t *state) {
                 uint32_t min = inst->operand1;
                 uint32_t max = inst->operand2;
                 uint32_t count = 0;
-                size_t body_pc = inst->operand3;
+                (void)inst->operand3;  /* body_pc - TODO: use in implementation */
                 
                 /* Match minimum required */
                 for (count = 0; count < min; count++) {
@@ -514,7 +495,7 @@ static int vm_execute_internal(vm_state_t *state) {
                 
                 /* Match up to maximum greedily */
                 for (; count < max; count++) {
-                    size_t saved_pos = state->input_pos;
+                    (void)state->input_pos;  /* saved_pos - TODO: use for backtracking */
                     /* Try to match body */
                     /* If fails, restore and break */
                     /* TODO: Proper repeat implementation */
@@ -524,195 +505,15 @@ static int vm_execute_internal(vm_state_t *state) {
                 break;
             }
             
-            /* Stack operations */
-            case CHOMSKY3_OP_PUSH: {
-                if (stack_push(state, inst->operand1) < 0) {
-                    return -1;
-                }
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_POP: {
-                stack_pop(state);
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_DUP: {
-                uint64_t val = stack_peek(state, 0);
-                if (stack_push(state, val) < 0) {
-                    return -1;
-                }
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_SWAP: {
-                if (state->stack_size < 2) {
-                    return -1;
-                }
-                uint64_t a = stack_pop(state);
-                uint64_t b = stack_pop(state);
-                stack_push(state, a);
-                stack_push(state, b);
-                pc++;
-                break;
-            }
-            
-            /* Arithmetic operations */
-            case CHOMSKY3_OP_ADD: {
-                uint64_t b = stack_pop(state);
-                uint64_t a = stack_pop(state);
-                stack_push(state, a + b);
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_SUB: {
-                uint64_t b = stack_pop(state);
-                uint64_t a = stack_pop(state);
-                stack_push(state, a - b);
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_MUL: {
-                uint64_t b = stack_pop(state);
-                uint64_t a = stack_pop(state);
-                stack_push(state, a * b);
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_DIV: {
-                uint64_t b = stack_pop(state);
-                uint64_t a = stack_pop(state);
-                if (b == 0) return -1;
-                stack_push(state, a / b);
-                pc++;
-                break;
-            }
-            
-            /* Comparison operations */
-            case CHOMSKY3_OP_EQ: {
-                uint64_t b = stack_pop(state);
-                uint64_t a = stack_pop(state);
-                stack_push(state, a == b ? 1 : 0);
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_NE: {
-                uint64_t b = stack_pop(state);
-                uint64_t a = stack_pop(state);
-                stack_push(state, a != b ? 1 : 0);
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_LT: {
-                uint64_t b = stack_pop(state);
-                uint64_t a = stack_pop(state);
-                stack_push(state, a < b ? 1 : 0);
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_LE: {
-                uint64_t b = stack_pop(state);
-                uint64_t a = stack_pop(state);
-                stack_push(state, a <= b ? 1 : 0);
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_GT: {
-                uint64_t b = stack_pop(state);
-                uint64_t a = stack_pop(state);
-                stack_push(state, a > b ? 1 : 0);
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_GE: {
-                uint64_t b = stack_pop(state);
-                uint64_t a = stack_pop(state);
-                stack_push(state, a >= b ? 1 : 0);
-                pc++;
-                break;
-            }
-            
-            /* Bitwise operations */
-            case CHOMSKY3_OP_AND: {
-                uint64_t b = stack_pop(state);
-                uint64_t a = stack_pop(state);
-                stack_push(state, a & b);
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_OR: {
-                uint64_t b = stack_pop(state);
-                uint64_t a = stack_pop(state);
-                stack_push(state, a | b);
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_XOR: {
-                uint64_t b = stack_pop(state);
-                uint64_t a = stack_pop(state);
-                stack_push(state, a ^ b);
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_NOT: {
-                uint64_t a = stack_pop(state);
-                stack_push(state, ~a);
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_SHL: {
-                uint64_t b = stack_pop(state);
-                uint64_t a = stack_pop(state);
-                stack_push(state, a << b);
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_SHR: {
-                uint64_t b = stack_pop(state);
-                uint64_t a = stack_pop(state);
-                stack_push(state, a >> b);
-                pc++;
-                break;
-            }
-            
-            case CHOMSKY3_OP_CALL: {
-                /* Function call */
-                if (state->call_stack_size >= state->call_stack_capacity) {
-                    return -1;
-                }
-                state->call_stack[state->call_stack_size++] = pc + 1;
-                pc = inst->operand1;
-                break;
-            }
-            
-            case CHOMSKY3_OP_RET: {
-                /* Return from function */
-                if (state->call_stack_size == 0) {
-                    return -1;
-                }
-                pc = state->call_stack[--state->call_stack_size];
-                break;
-            }
-            
             case CHOMSKY3_OP_NOP:
                 pc++;
                 break;
             
             default:
-                /* Unknown op
+                /* Unknown opcode */
+                return -1;
+        }
+    }
+    
+    return 1;
+}
