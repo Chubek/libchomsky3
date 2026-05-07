@@ -1,0 +1,17 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# Find dependencies
+find_dependency(Threads)
+
+if(@CHOMSKY3_ENABLE_JIT@)
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(SLJIT sljit QUIET)
+    endif()
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/chomsky3Targets.cmake")
+
+check_required_components(chomsky3)

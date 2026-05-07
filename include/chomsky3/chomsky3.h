@@ -199,6 +199,24 @@ const char *chomsky3_version(void);
  */
 bool chomsky3_jit_available(void);
 
+/**
+ * @brief Get the Unicode character name for a codepoint
+ * @param codepoint Unicode codepoint (U+0000 to U+10FFFF)
+ * @return Character name string, or NULL if not found
+ * 
+ * Example: chomsky3_unicode_name(0x0041) returns "LATIN CAPITAL LETTER A"
+ */
+const char* chomsky3_unicode_name(uint32_t codepoint);
+
+/**
+ * @brief Get the codepoint for a Unicode character name
+ * @param name Official Unicode character name
+ * @return Codepoint value, or 0xFFFFFFFF if not found
+ * 
+ * Example: chomsky3_unicode_codepoint("SPACE") returns 0x0020
+ */
+CHOMSKY3_API uint32_t chomsky3_unicode_codepoint(const char *name);
+
 #ifdef __cplusplus
 }
 #endif
