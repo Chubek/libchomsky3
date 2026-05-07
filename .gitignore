@@ -1,55 +1,156 @@
-# Prerequisites
-*.d
+# General OS and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.swn
+*.bak
+*~
 
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
+# Compiled object files, binaries, and shared objects
+**/*.o
+**/*.so
+**/*.a
+**/*.out
+**/*.exe
+**/*.dll
 
-# Linker output
-*.ilk
-*.map
-*.exp
+# C/C++
+**/a.out
+**/core
+**/core.*
+**/vgcore.*
+**/*.dSYM/
+**/*.obj
 
-# Precompiled Headers
-*.gch
-*.pch
+# OCaml
+**/*.cmo
+**/*.cmi
+**/*.cmx
+**/*.cmxa
+**/*.cma
+**/*.cmj
+**/*.annot
+**/*.byte
+**/*.native
 
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
+# Rust
+**/target/
+**/Cargo.lock
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
+# Go
+**/bin/
+**/pkg/
+**/*.test
 
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
+# JavaScript/Node
+**/node_modules/
+**/package-lock.json
+**/npm-debug.log
+**/yarn.lock
+**/.eslintcache
 
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/*.pyo
+**/.mypy_cache/
+**/.pytest_cache/
+**/.coverage
+**/.tox/
+**/.venv/
+**/env/
+**/venv/
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+# Ruby
+**/.bundle/
+**/vendor/bundle/
+**/.rbx/
+**/.yardoc/
+**/_yardoc/
+**/.gem/
+**/coverage/
+**/spec/reports/
+**/test/tmp/
+**/test/version_tmp/
+**/.sass-cache/
+**/.pry_history
+**/.byebug_history
 
-# debug information files
-*.dwo
+# Scheme/Racket
+**/*.zo
+**/*.ss~
+**/*.rkt~
+
+# Lua
+**/*.luac
+
+# Tcl
+**/*.tcl~
+**/*.tcl#
+
+# Crystal
+**/.crystal/
+**/.shards/
+**/*.dwarf
+
+# Haskell
+**/*.hi
+**/*.chi
+**/*.o
+**/*.prof
+**/*.aux
+**/*.hp
+**/*.eventlog
+**/dist/
+**/dist-newstyle/
+**/.stack-work/
+**/cabal.project.local
+**/cabal.sandbox.config
+
+# D
+**/*.di
+
+# Pascal
+**/*.ppu
+**/*.o
+**/*.a
+**/*.so
+
+# Nim
+**/nimcache/
+**/*.nimble
+
+# Miscellaneous build and test artifacts
+**/build/
+**/Build/
+**/debug/
+**/Debug/
+**/release/
+**/Release/
+**/tmp/
+**/temp/
+**/log/
+**/logs/
+**/*.log
+
+# Editor/project files
+**/.idea/
+**/.vscode/
+**/.project
+**/.settings/
+**/.classpath
+
+# Manpage build artifacts
+**/*.1
+**/*.man
+**/*.html
+**/*.pdf
+**/*.ps
+
+# Filterati project local files
+.env
+*.local
+
+AGENTS.md
+
