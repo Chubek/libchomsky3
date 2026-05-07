@@ -22,6 +22,7 @@ extern "C" {
 typedef struct chomsky3_bytecode chomsky3_bytecode_t;
 typedef struct chomsky3_vm chomsky3_vm_t;
 typedef struct chomsky3_vm_state chomsky3_vm_state_t;
+typedef struct chomsky3_ir chomsky3_ir_t;
 
 /* Bytecode instruction opcodes */
 typedef enum {

@@ -5,11 +5,12 @@
  * relocation tables, symbol tables, and debug information.
  */
 
-#include "chomsky3/bindcode.h"
+#include "chomsky3/bincode.h"
 #include "chomsky3/error.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 /* Serialization format constants */
 #define CHOMSKY3_SECTION_CODE       0x01
@@ -18,6 +19,10 @@
 #define CHOMSKY3_SECTION_DEBUG      0x04
 #define CHOMSKY3_SECTION_METADATA   0x05
 #define CHOMSKY3_SECTION_END        0xFF
+
+/* Serialization flags */
+#define CHOMSKY3_SERIALIZE_COMPRESS  (1 << 0)
+#define CHOMSKY3_SERIALIZE_METADATA  (1 << 1)
 
 /* Compression methods */
 #define CHOMSKY3_COMPRESS_NONE      0x00
@@ -68,6 +73,26 @@ typedef struct {
     size_t position;            /* Current write position */
     chomsky3_error_t error;     /* Last error */
 } chomsky3_serialize_ctx_t;
+
+/* Helper to set error with message */
+static void chomsky3_set_error(chomsky3_error_t code, const char *fmt, ...) {
+    char buffer[512];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+    
+    chomsky3_error_info_t info = {
+        .code = code,
+        .severity = CHOMSKY3_SEVERITY_ERROR,
+        .message = buffer,
+        .location = {0},
+        .context = NULL,
+        .suggestion = NULL,
+        .user_data = NULL
+    };
+    chomsky3_set_last_error(&info);
+}
 
 /* Forward declarations */
 static chomsky3_error_t write_section_header(
@@ -369,7 +394,8 @@ chomsky3_error_t chomsky3_bincode_deserialize_advanced(
 
     if (!bincode) {
         free(metadata);
-        return chomsky3_get_last_error();
+        const chomsky3_error_info_t *err = chomsky3_get_last_error();
+        return err ? err->code : CHOMSKY3_ERROR_GENERIC;
     }
 
     if (metadata) {
@@ -617,6 +643,7 @@ static chomsky3_error_t write_bytes(
 /**
  * Write uint32 to context.
  */
+__attribute__((unused))
 static chomsky3_error_t write_uint32(
     chomsky3_serialize_ctx_t *ctx,
     uint32_t value
@@ -627,6 +654,7 @@ static chomsky3_error_t write_uint32(
 /**
  * Write uint64 to context.
  */
+__attribute__((unused))
 static chomsky3_error_t write_uint64(
     chomsky3_serialize_ctx_t *ctx,
     uint64_t value

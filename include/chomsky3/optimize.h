@@ -355,7 +355,7 @@ chomsky3_error_t chomsky3_optimize_register_allocation(
  * @param ir The Intermediate Representation to verify.
  * @return CHOMSKY3_OK if verification passes, error code otherwise.
  */
-chomsky3_error_t chomsky3_ir_verify(const chomsky3_ir_t *ir);
+bool chomsky3_ir_verify(const chomsky3_ir_t *ir, char **error_msg);
 
 /* --- Specific Optimization Pass Definitions --- */
 /* These functions would typically be defined in .c files and exposed via IR passes */

@@ -107,6 +107,10 @@ struct chomsky3_bincode {
     chomsky3_context_t *ctx;        /* Parent context */
     chomsky3_native_func_t *native; /* Native function */
     
+    /* Legacy fields for format.c compatibility */
+    void *code;                     /* Raw code pointer */
+    void *entry_point;              /* Entry point address */
+    
     /* Source information */
     const chomsky3_bytecode_t *bytecode; /* Source bytecode */
     char *pattern_source;           /* Original pattern */
@@ -121,6 +125,8 @@ struct chomsky3_bincode {
     size_t reloc_size;              /* Relocation table size */
     
     /* Metadata */
+    char *metadata;                 /* Pattern metadata string */
+    uint32_t arch;                  /* Target architecture */
     chomsky3_jit_options_t options; /* Compilation options */
     uint32_t num_captures;          /* Number of capture groups */
     
@@ -213,6 +219,20 @@ chomsky3_error_t chomsky3_bincode_from_pattern(
     const chomsky3_pattern_t *pattern,
     const chomsky3_jit_options_t *options,
     chomsky3_bincode_t **bincode
+);
+
+/**
+ * Create binary code structure.
+ * 
+ * @param arch Target architecture
+ * @param code Code buffer
+ * @param code_size Code size
+ * @return New bincode structure or NULL on error
+ */
+chomsky3_bincode_t *chomsky3_bincode_create(
+    chomsky3_arch_t arch,
+    const void *code,
+    size_t code_size
 );
 
 /**

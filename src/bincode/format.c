@@ -5,12 +5,34 @@
  * management for JIT-compiled native code.
  */
 
-#include "chomsky3/bindcode.h"
+#define _POSIX_C_SOURCE 200809L
+#include "chomsky3/bincode.h"
 #include "chomsky3/error.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+#include <stdarg.h>
+
+/* Helper to set error with message */
+static void chomsky3_set_error(chomsky3_error_t code, const char *fmt, ...) {
+    char buffer[512];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+    
+    chomsky3_error_info_t info = {
+        .code = code,
+        .severity = CHOMSKY3_SEVERITY_ERROR,
+        .message = buffer,
+        .location = {0},
+        .context = NULL,
+        .suggestion = NULL,
+        .user_data = NULL
+    };
+    chomsky3_set_last_error(&info);
+}
 
 /* Magic number for binary code format */
 #define CHOMSKY3_BINCODE_MAGIC 0x43484F4D  /* "CHOM" */
@@ -247,7 +269,8 @@ chomsky3_error_t chomsky3_bincode_deserialize(
     );
 
     if (!bincode) {
-        return chomsky3_get_last_error();
+        const chomsky3_error_info_t *err = chomsky3_get_last_error();
+        return err ? err->code : CHOMSKY3_ERROR_GENERIC;
     }
 
     /* Extract metadata if present */
@@ -313,9 +336,11 @@ chomsky3_error_t chomsky3_bincode_save(
  * Load binary code from a file.
  */
 chomsky3_error_t chomsky3_bincode_load(
+    chomsky3_context_t *ctx,
     const char *filename,
     chomsky3_bincode_t **out_bincode
 ) {
+    (void)ctx;  /* Unused for now */
     if (!filename || !out_bincode) {
         return CHOMSKY3_ERR_INVALID_ARGUMENT;
     }
@@ -434,11 +459,15 @@ chomsky3_error_t chomsky3_bincode_get_info(
 /**
  * Clone binary code.
  */
-chomsky3_bincode_t *chomsky3_bincode_clone(const chomsky3_bincode_t *bincode) {
+chomsky3_error_t chomsky3_bincode_clone(
+    const chomsky3_bincode_t *bincode,
+    chomsky3_bincode_t **cloned
+) {
+    if (!cloned) return CHOMSKY3_ERR_INVALID_ARGUMENT;
     if (!bincode) {
         chomsky3_set_error(CHOMSKY3_ERR_INVALID_ARGUMENT,
                           "Cannot clone NULL bincode");
-        return NULL;
+        return CHOMSKY3_ERR_INVALID_ARGUMENT;
     }
 
     chomsky3_bincode_t *clone = chomsky3_bincode_create(
@@ -448,7 +477,7 @@ chomsky3_bincode_t *chomsky3_bincode_clone(const chomsky3_bincode_t *bincode) {
     );
 
     if (!clone) {
-        return NULL;
+        return CHOMSKY3_ERR_OUT_OF_MEMORY;
     }
 
     /* Copy metadata */
@@ -458,7 +487,7 @@ chomsky3_bincode_t *chomsky3_bincode_clone(const chomsky3_bincode_t *bincode) {
             chomsky3_bincode_free(clone);
             chomsky3_set_error(CHOMSKY3_ERR_OUT_OF_MEMORY,
                               "Failed to copy metadata");
-            return NULL;
+            return CHOMSKY3_ERR_OUT_OF_MEMORY;
         }
     }
 
@@ -467,7 +496,8 @@ chomsky3_bincode_t *chomsky3_bincode_clone(const chomsky3_bincode_t *bincode) {
                           (const uint8_t *)bincode->code;
     clone->entry_point = (uint8_t *)clone->code + entry_offset;
 
-    return clone;
+    *cloned = clone;
+    return CHOMSKY3_OK;
 }
 
 /**
@@ -669,4 +699,10 @@ static chomsky3_error_t deserialize_metadata(
 
     metadata->num_groups = *(const uint32_t *)ptr;
     ptr += sizeof(uint32_t);
-    metadata->opt_level = *(const
+    metadata->opt_level = *(const uint32_t *)ptr;
+    ptr += sizeof(uint32_t);
+    metadata->compile_time_us = *(const uint64_t *)ptr;
+    ptr += sizeof(uint64_t);
+
+    return CHOMSKY3_OK;
+}

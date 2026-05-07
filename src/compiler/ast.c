@@ -15,6 +15,17 @@
 /* Helper macros */
 #define INITIAL_CAPACITY 8
 
+static char *chomsky3_ast_strdup(const char *str) {
+    size_t length = strlen(str);
+    char *copy = malloc(length + 1);
+    if (copy) {
+        memcpy(copy, str, length + 1);
+    }
+    return copy;
+}
+
+#define strdup chomsky3_ast_strdup
+
 /* Forward declarations for internal helpers */
 static void free_node_data(chomsky3_ast_node_t *node);
 static chomsky3_ast_node_t *clone_node_recursive(const chomsky3_ast_node_t *node);
@@ -778,12 +789,10 @@ chomsky3_ast_node_t *chomsky3_ast_node_create_backref(
 
     node->data.backref.group_id = group_id;
     node->data.backref.group_name = group_name ? strdup(group_name) : NULL;
-
     if (group_name && !node->data.backref.group_name) {
-        free(node);
+        chomsky3_ast_node_free(node);
         return NULL;
     }
-
     return node;
 }
 
@@ -795,4 +804,306 @@ chomsky3_ast_node_t *chomsky3_ast_node_create_lookaround(
     bool positive,
     bool ahead
 ) {
-    if (
+    chomsky3_ast_node_type_t type;
+    if (ahead) {
+        type = positive ? CHOMSKY3_AST_LOOKAHEAD : CHOMSKY3_AST_NEGATIVE_LOOKAHEAD;
+    } else {
+        type = positive ? CHOMSKY3_AST_LOOKBEHIND : CHOMSKY3_AST_NEGATIVE_LOOKBEHIND;
+    }
+
+    chomsky3_ast_node_t *node = chomsky3_ast_node_create(type);
+    if (!node) {
+        return NULL;
+    }
+    node->data.lookaround.child = child;
+    node->data.lookaround.positive = positive;
+    node->data.lookaround.ahead = ahead;
+    if (child) {
+        child->parent = node;
+    }
+    return node;
+}
+
+chomsky3_ast_node_t *chomsky3_ast_node_create_conditional(
+    chomsky3_ast_node_t *condition,
+    chomsky3_ast_node_t *true_branch,
+    chomsky3_ast_node_t *false_branch
+) {
+    chomsky3_ast_node_t *node = chomsky3_ast_node_create(CHOMSKY3_AST_CONDITIONAL);
+    if (!node) {
+        return NULL;
+    }
+    node->data.conditional.condition = condition;
+    node->data.conditional.true_branch = true_branch;
+    node->data.conditional.false_branch = false_branch;
+    if (condition) condition->parent = node;
+    if (true_branch) true_branch->parent = node;
+    if (false_branch) false_branch->parent = node;
+    return node;
+}
+
+chomsky3_ast_node_t *chomsky3_ast_node_create_unicode_property(
+    const char *property_name,
+    const char *property_value,
+    bool negated
+) {
+    if (!property_name) {
+        return NULL;
+    }
+    chomsky3_ast_node_t *node = chomsky3_ast_node_create(
+        negated ? CHOMSKY3_AST_NEGATED_UNICODE_PROPERTY : CHOMSKY3_AST_UNICODE_PROPERTY
+    );
+    if (!node) {
+        return NULL;
+    }
+    node->data.unicode_property.property_name = strdup(property_name);
+    node->data.unicode_property.property_value = property_value ? strdup(property_value) : NULL;
+    node->data.unicode_property.negated = negated;
+    if (!node->data.unicode_property.property_name ||
+        (property_value && !node->data.unicode_property.property_value)) {
+        chomsky3_ast_node_free(node);
+        return NULL;
+    }
+    return node;
+}
+
+const char *chomsky3_ast_node_type_name(chomsky3_ast_node_type_t type) {
+    switch (type) {
+        case CHOMSKY3_AST_LITERAL: return "literal";
+        case CHOMSKY3_AST_STRING: return "string";
+        case CHOMSKY3_AST_CHAR_CLASS: return "char_class";
+        case CHOMSKY3_AST_NEGATED_CHAR_CLASS: return "negated_char_class";
+        case CHOMSKY3_AST_DOT: return "dot";
+        case CHOMSKY3_AST_GROUP: return "group";
+        case CHOMSKY3_AST_NON_CAPTURING_GROUP: return "non_capturing_group";
+        case CHOMSKY3_AST_NAMED_GROUP: return "named_group";
+        case CHOMSKY3_AST_ALTERNATION: return "alternation";
+        case CHOMSKY3_AST_CONCATENATION: return "concatenation";
+        case CHOMSKY3_AST_BACKREF: return "backref";
+        case CHOMSKY3_AST_NAMED_BACKREF: return "named_backref";
+        case CHOMSKY3_AST_LOOKAHEAD: return "lookahead";
+        case CHOMSKY3_AST_NEGATIVE_LOOKAHEAD: return "negative_lookahead";
+        case CHOMSKY3_AST_LOOKBEHIND: return "lookbehind";
+        case CHOMSKY3_AST_NEGATIVE_LOOKBEHIND: return "negative_lookbehind";
+        case CHOMSKY3_AST_CONDITIONAL: return "conditional";
+        case CHOMSKY3_AST_UNICODE_PROPERTY: return "unicode_property";
+        case CHOMSKY3_AST_NEGATED_UNICODE_PROPERTY: return "negated_unicode_property";
+        case CHOMSKY3_AST_EMPTY: return "empty";
+        case CHOMSKY3_AST_FAIL: return "fail";
+        default: return "unknown";
+    }
+}
+
+bool chomsky3_ast_node_is_quantifier(chomsky3_ast_node_type_t type) {
+    return type == CHOMSKY3_AST_ZERO_OR_MORE ||
+           type == CHOMSKY3_AST_ONE_OR_MORE ||
+           type == CHOMSKY3_AST_ZERO_OR_ONE ||
+           type == CHOMSKY3_AST_REPEAT ||
+           type == CHOMSKY3_AST_ZERO_OR_MORE_LAZY ||
+           type == CHOMSKY3_AST_ONE_OR_MORE_LAZY ||
+           type == CHOMSKY3_AST_ZERO_OR_ONE_LAZY ||
+           type == CHOMSKY3_AST_REPEAT_LAZY ||
+           type == CHOMSKY3_AST_ZERO_OR_MORE_POSSESSIVE ||
+           type == CHOMSKY3_AST_ONE_OR_MORE_POSSESSIVE ||
+           type == CHOMSKY3_AST_ZERO_OR_ONE_POSSESSIVE ||
+           type == CHOMSKY3_AST_REPEAT_POSSESSIVE;
+}
+
+bool chomsky3_ast_node_is_anchor(chomsky3_ast_node_type_t type) {
+    return type == CHOMSKY3_AST_START_ANCHOR ||
+           type == CHOMSKY3_AST_END_ANCHOR ||
+           type == CHOMSKY3_AST_WORD_BOUNDARY ||
+           type == CHOMSKY3_AST_NON_WORD_BOUNDARY ||
+           type == CHOMSKY3_AST_START_TEXT ||
+           type == CHOMSKY3_AST_END_TEXT ||
+           type == CHOMSKY3_AST_END_TEXT_NEWLINE;
+}
+
+bool chomsky3_ast_node_is_lookaround(chomsky3_ast_node_type_t type) {
+    return type == CHOMSKY3_AST_LOOKAHEAD ||
+           type == CHOMSKY3_AST_NEGATIVE_LOOKAHEAD ||
+           type == CHOMSKY3_AST_LOOKBEHIND ||
+           type == CHOMSKY3_AST_NEGATIVE_LOOKBEHIND;
+}
+
+chomsky3_error_t chomsky3_ast_traverse(
+    chomsky3_ast_node_t *node,
+    chomsky3_ast_visitor_t callback,
+    void *user_data
+) {
+    if (!node || !callback) {
+        return CHOMSKY3_ERR_INVALID_ARGUMENT;
+    }
+    return traverse_recursive(node, callback, user_data);
+}
+
+void chomsky3_ast_print(
+    const chomsky3_ast_t *ast,
+    FILE *stream,
+    int indent_level
+) {
+    if (ast && ast->root) {
+        chomsky3_ast_node_print(ast->root, stream, indent_level);
+    }
+}
+
+void chomsky3_ast_node_print(
+    const chomsky3_ast_node_t *node,
+    FILE *stream,
+    int indent_level
+) {
+    if (!stream) {
+        stream = stderr;
+    }
+    print_node_recursive(node, stream, indent_level);
+}
+
+chomsky3_error_t chomsky3_ast_validate(const chomsky3_ast_t *ast) {
+    if (!ast) {
+        return CHOMSKY3_ERR_INVALID_ARGUMENT;
+    }
+    return ast->root ? validate_node(ast->root, ast) : CHOMSKY3_OK;
+}
+
+chomsky3_error_t chomsky3_ast_get_stats(
+    const chomsky3_ast_t *ast,
+    size_t *num_nodes,
+    size_t *max_depth,
+    uint32_t *num_groups
+) {
+    if (!ast) {
+        return CHOMSKY3_ERR_INVALID_ARGUMENT;
+    }
+    if (num_nodes) *num_nodes = 0;
+    if (max_depth) *max_depth = 0;
+    if (ast->root && num_nodes && max_depth) {
+        get_node_stats(ast->root, num_nodes, max_depth, 1);
+    }
+    if (num_groups) {
+        *num_groups = ast->num_groups;
+    }
+    return CHOMSKY3_OK;
+}
+
+chomsky3_error_t chomsky3_ast_register_named_group(
+    chomsky3_ast_t *ast,
+    const char *name,
+    uint32_t group_id
+) {
+    if (!ast || !name) {
+        return CHOMSKY3_ERR_INVALID_ARGUMENT;
+    }
+    size_t count = ast->named_groups.count;
+    char **names = realloc(ast->named_groups.names, (count + 1) * sizeof(*names));
+    if (!names) {
+        return CHOMSKY3_ERR_OUT_OF_MEMORY;
+    }
+    ast->named_groups.names = names;
+    uint32_t *ids = realloc(ast->named_groups.group_ids, (count + 1) * sizeof(*ids));
+    if (!ids) {
+        return CHOMSKY3_ERR_OUT_OF_MEMORY;
+    }
+    ast->named_groups.group_ids = ids;
+    ast->named_groups.names[count] = strdup(name);
+    if (!ast->named_groups.names[count]) {
+        return CHOMSKY3_ERR_OUT_OF_MEMORY;
+    }
+    ast->named_groups.group_ids[count] = group_id;
+    ast->named_groups.count = count + 1;
+    return CHOMSKY3_OK;
+}
+
+chomsky3_error_t chomsky3_ast_lookup_named_group(
+    const chomsky3_ast_t *ast,
+    const char *name,
+    uint32_t *group_id
+) {
+    if (!ast || !name || !group_id) {
+        return CHOMSKY3_ERR_INVALID_ARGUMENT;
+    }
+    for (size_t i = 0; i < ast->named_groups.count; i++) {
+        if (strcmp(ast->named_groups.names[i], name) == 0) {
+            *group_id = ast->named_groups.group_ids[i];
+            return CHOMSKY3_OK;
+        }
+    }
+    return CHOMSKY3_ERR_INVALID_ARGUMENT;
+}
+
+static chomsky3_error_t traverse_recursive(
+    chomsky3_ast_node_t *node,
+    chomsky3_ast_visitor_t callback,
+    void *user_data
+) {
+    if (!node) {
+        return CHOMSKY3_OK;
+    }
+    chomsky3_error_t err = callback(node, user_data);
+    if (err != CHOMSKY3_OK) {
+        return err;
+    }
+
+    switch (node->type) {
+        case CHOMSKY3_AST_GROUP:
+        case CHOMSKY3_AST_NON_CAPTURING_GROUP:
+        case CHOMSKY3_AST_NAMED_GROUP:
+        case CHOMSKY3_AST_ATOMIC_GROUP:
+            return traverse_recursive(node->data.group.child, callback, user_data);
+        case CHOMSKY3_AST_CONCATENATION:
+            for (size_t i = 0; i < node->data.concatenation.num_children; i++) {
+                err = traverse_recursive(node->data.concatenation.children[i], callback, user_data);
+                if (err != CHOMSKY3_OK) return err;
+            }
+            break;
+        case CHOMSKY3_AST_ALTERNATION:
+            for (size_t i = 0; i < node->data.alternation.num_alternatives; i++) {
+                err = traverse_recursive(node->data.alternation.alternatives[i], callback, user_data);
+                if (err != CHOMSKY3_OK) return err;
+            }
+            break;
+        default:
+            break;
+    }
+    return CHOMSKY3_OK;
+}
+
+static void print_indent(FILE *stream, int level) {
+    for (int i = 0; i < level; i++) {
+        fputs("  ", stream);
+    }
+}
+
+static void print_node_recursive(
+    const chomsky3_ast_node_t *node,
+    FILE *stream,
+    int indent_level
+) {
+    if (!node) {
+        return;
+    }
+    print_indent(stream, indent_level);
+    fprintf(stream, "%s\n", chomsky3_ast_node_type_name(node->type));
+}
+
+static chomsky3_error_t validate_node(
+    const chomsky3_ast_node_t *node,
+    const chomsky3_ast_t *ast
+) {
+    (void)ast;
+    return node ? CHOMSKY3_OK : CHOMSKY3_ERR_INVALID_ARGUMENT;
+}
+
+static void get_node_stats(
+    const chomsky3_ast_node_t *node,
+    size_t *num_nodes,
+    size_t *max_depth,
+    size_t current_depth
+) {
+    if (!node) {
+        return;
+    }
+    (*num_nodes)++;
+    if (current_depth > *max_depth) {
+        *max_depth = current_depth;
+    }
+}

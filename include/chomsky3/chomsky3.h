@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "error.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,18 +44,33 @@ typedef enum {
     CHOMSKY3_TARGET_C_SOURCE,   /* Generate C source code */
 } chomsky3_target_t;
 
-/* Error codes */
-typedef enum {
-    CHOMSKY3_OK = 0,
-    CHOMSKY3_ERROR_INVALID_PATTERN,
-    CHOMSKY3_ERROR_PARSE_FAILED,
-    CHOMSKY3_ERROR_COMPILE_FAILED,
-    CHOMSKY3_ERROR_OUT_OF_MEMORY,
-    CHOMSKY3_ERROR_INVALID_ARGUMENT,
-    CHOMSKY3_ERROR_JIT_UNAVAILABLE,
-    CHOMSKY3_ERROR_SERIALIZATION_FAILED,
-    CHOMSKY3_ERROR_DESERIALIZATION_FAILED,
-} chomsky3_error_t;
+/* API decoration */
+#ifndef CHOMSKY3_API
+#if defined(_WIN32) && defined(CHOMSKY3_BUILD)
+#define CHOMSKY3_API __declspec(dllexport)
+#elif defined(_WIN32)
+#define CHOMSKY3_API __declspec(dllimport)
+#else
+#define CHOMSKY3_API
+#endif
+#endif
+
+/* Compatibility aliases for legacy names kept by older callers */
+#ifndef CHOMSKY3_ERROR_PARSE_FAILED
+#define CHOMSKY3_ERROR_PARSE_FAILED CHOMSKY3_ERROR_PARSE_SYNTAX
+#endif
+#ifndef CHOMSKY3_ERROR_COMPILE_FAILED
+#define CHOMSKY3_ERROR_COMPILE_FAILED CHOMSKY3_ERROR_COMPILE_CODEGEN_FAILED
+#endif
+#ifndef CHOMSKY3_ERROR_JIT_UNAVAILABLE
+#define CHOMSKY3_ERROR_JIT_UNAVAILABLE CHOMSKY3_ERROR_JIT_NOT_AVAILABLE
+#endif
+#ifndef CHOMSKY3_ERROR_SERIALIZATION_FAILED
+#define CHOMSKY3_ERROR_SERIALIZATION_FAILED CHOMSKY3_ERROR_IO_GENERIC
+#endif
+#ifndef CHOMSKY3_ERROR_DESERIALIZATION_FAILED
+#define CHOMSKY3_ERROR_DESERIALIZATION_FAILED CHOMSKY3_ERROR_IO_GENERIC
+#endif
 
 /* Match result */
 struct chomsky3_match {
@@ -184,6 +200,55 @@ chomsky3_pattern_t *chomsky3_deserialize(
  * @return Error message string
  */
 const char *chomsky3_error_string(chomsky3_error_t error);
+
+/**
+ * Opaque parser handle for grammar/regex parsing.
+ */
+typedef struct chomsky3_parser chomsky3_parser;
+
+/**
+ * Parsing options used during parser lifecycle operations.
+ */
+typedef struct chomsky3_options {
+    size_t max_steps;
+    size_t max_backtrack;
+    size_t max_stack_depth;
+    int enable_jit;
+} chomsky3_options_t;
+
+/**
+ * Create a new parser from a grammar/pattern.
+ * 
+ * @param grammar Source grammar/pattern text.
+ * @param opts Optional parse options (NULL for defaults).
+ * @return New parser object or NULL on allocation/argument failure.
+ */
+chomsky3_parser *chomsky3_parser_new(const char *grammar, const chomsky3_options_t *opts);
+
+/**
+ * Parse an input string with a parser instance.
+ * 
+ * @param parser Active parser.
+ * @param input Input text.
+ * @param len Input length.
+ * @return 0 on success, non-zero on failure.
+ */
+int chomsky3_parse(chomsky3_parser *parser, const char *input, size_t len);
+
+/**
+ * Release parser resources.
+ * 
+ * @param parser Parser to free.
+ */
+void chomsky3_parser_free(chomsky3_parser *parser);
+
+/**
+ * Return the last parser error message.
+ * 
+ * @param parser Active parser.
+ * @return Null-terminated error message string, or NULL when unavailable.
+ */
+const char *chomsky3_error_message(chomsky3_parser *parser);
 
 /**
  * Get library version string.

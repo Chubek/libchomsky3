@@ -823,4 +823,8 @@ chomsky3_error_t chomsky3_ir_print(const chomsky3_ir_t *ir, char **output);
  * 
  * @param ir IR
  * @param filename Output filename
- * @return
+ * @return Error code
+ */
+chomsky3_error_t chomsky3_ir_print_file(const chomsky3_ir_t *ir, const char *filename);
+
+#endif /* CHOMSKY3_IR_H */

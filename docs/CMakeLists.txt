@@ -1,6 +1,12 @@
 # docs/CMakeLists.txt - Documentation generation for libchomsky3
 
-find_package(Doxygen REQUIRED)
+include(GNUInstallDirs)
+
+if(NOT CMAKE_INSTALL_DOCDIR)
+    set(CMAKE_INSTALL_DOCDIR "${CMAKE_INSTALL_DATAROOTDIR}/doc/${PROJECT_NAME}")
+endif()
+
+find_package(Doxygen QUIET)
 
 # Set variables for Doxyfile.in substitution
 set(PROJECT_NAME "libchomsky3")
@@ -16,24 +22,29 @@ configure_file(
 )
 
 # Documentation target
-add_custom_target(docs
-    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating API documentation with Doxygen"
-    VERBATIM
-    SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/Chomsky3.i
-        ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
-        ${CMAKE_CURRENT_SOURCE_DIR}/layout.xml
-)
+if(DOXYGEN_FOUND)
+    # Documentation target
+    add_custom_target(docs
+        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM
+        SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/Chomsky3.i
+            ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
+            ${CMAKE_CURRENT_SOURCE_DIR}/layout.xml
+    )
 
-# Optional: Install documentation
-install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
-    DESTINATION ${CMAKE_INSTALL_DOCDIR}
-    COMPONENT documentation
-    OPTIONAL
-)
+    # Optional: Install documentation
+    install(
+        DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
+        DESTINATION ${CMAKE_INSTALL_DOCDIR}
+        COMPONENT documentation
+        OPTIONAL
+    )
+else()
+    message(STATUS "Doxygen not found; documentation target disabled")
+endif()
 
 # Optional: Add docs to 'all' target (uncomment if desired)
 # add_dependencies(all docs)

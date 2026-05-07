@@ -7,7 +7,6 @@
 
 #include "chomsky3/compiler.h"
 #include "chomsky3/error.h"
-#include "chomsky3/parser.h"
 #include "chomsky3/ir.h"
 #include "chomsky3/pattern.h"
 #include <stdlib.h>
@@ -49,7 +48,7 @@ static chomsky3_error_t generate_pattern(
     chomsky3_pattern_t **pattern
 );
 static double get_time_ms(void);
-static size_t count_ast_nodes(const chomsky3_ast_node_t *node);
+static size_t count_ast_nodes(const chomsky3_regex_node_t *node);
 static void dump_ast_to_stderr(const chomsky3_regex_t *regex);
 static void dump_ir_to_stderr(const chomsky3_ir_t *ir);
 
@@ -333,14 +332,8 @@ chomsky3_error_t chomsky3_compiler_compile_string(
     }
 
     /* Parse pattern string to AST */
-    chomsky3_regex_t *regex = NULL;
-    chomsky3_error_t err = chomsky3_parse(
-        compiler->ctx,
-        pattern_str,
-        length,
-        compiler->options.flags,
-        &regex
-    );
+    chomsky3_regex_t *regex = chomsky3_regex_new(pattern_str, length);
+    chomsky3_error_t err = regex ? CHOMSKY3_OK : CHOMSKY3_ERR_OUT_OF_MEMORY;
 
     if (err != CHOMSKY3_OK) {
         return err;
@@ -604,54 +597,17 @@ static chomsky3_error_t generate_pattern(
  * Get current time in milliseconds.
  */
 static double get_time_ms(void) {
-    struct timespec ts;
-    if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
-        return 0.0;
-    }
-    return ts.tv_sec * 1000.0 + ts.tv_nsec / 1000000.0;
+    return (double)clock() * 1000.0 / (double)CLOCKS_PER_SEC;
 }
 
 /**
  * Count AST nodes recursively.
  */
-static size_t count_ast_nodes(const chomsky3_ast_node_t *node) {
+static size_t count_ast_nodes(const chomsky3_regex_node_t *node) {
     if (!node) {
         return 0;
     }
-
-    size_t count = 1;
-
-    switch (node->type) {
-        case CHOMSKY3_AST_CONCATENATION:
-            for (size_t i = 0; i < node->data.concatenation.num_children; i++) {
-                count += count_ast_nodes(node->data.concatenation.children[i]);
-            }
-            break;
-
-        case CHOMSKY3_AST_ALTERNATION:
-            for (size_t i = 0; i < node->data.alternation.num_alternatives; i++) {
-                count += count_ast_nodes(node->data.alternation.alternatives[i]);
-            }
-            break;
-
-        case CHOMSKY3_AST_QUANTIFIER:
-            count += count_ast_nodes(node->data.quantifier.child);
-            break;
-
-        case CHOMSKY3_AST_GROUP:
-            count += count_ast_nodes(node->data.group.child);
-            break;
-
-        case CHOMSKY3_AST_LOOKAROUND:
-            count += count_ast_nodes(node->data.lookaround.child);
-            break;
-
-        default:
-            /* Leaf nodes */
-            break;
-    }
-
-    return count;
+    return 1 + count_ast_nodes(node->left) + count_ast_nodes(node->right);
 }
 
 /**
@@ -664,8 +620,7 @@ static void dump_ast_to_stderr(const chomsky3_regex_t *regex) {
 
     fprintf(stderr, "\n=== AST Dump ===\n");
     fprintf(stderr, "Pattern: %s\n", regex->pattern ? regex->pattern : "(null)");
-    fprintf(stderr, "Flags: 0x%x\n", regex->flags);
-    fprintf(stderr, "Groups: %zu\n", regex->num_groups);
+        fprintf(stderr, "Groups: %zu\n", regex->num_groups);
     fprintf(stderr, "Nodes: %zu\n", count_ast_nodes(regex->root));
     fprintf(stderr, "\n");
 
@@ -684,7 +639,7 @@ static void dump_ir_to_stderr(const chomsky3_ir_t *ir) {
     fprintf(stderr, "Name: %s\n", ir->name ? ir->name : "(null)");
     fprintf(stderr, "Blocks: %zu\n", ir->num_blocks);
     fprintf(stderr, "Instructions: %zu\n", ir->total_instructions);
-    fprintf(stderr, "Registers: %zu\n", ir->num_registers);
+    fprintf(stderr, "Registers: %u\n", ir->num_registers);
     fprintf(stderr, "\n");
 
     /* TODO: Implement detailed IR block/instruction printing */
