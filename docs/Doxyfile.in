@@ -1,0 +1,219 @@
+# Doxyfile.in for libchomsky3
+# CMake will substitute @VARIABLE@ placeholders during configuration
+
+#---------------------------------------------------------------------------
+# Project related configuration options
+#---------------------------------------------------------------------------
+
+DOXYFILE_ENCODING      = UTF-8
+PROJECT_NAME           = "@PROJECT_NAME@"
+PROJECT_NUMBER         = "@PROJECT_VERSION@"
+PROJECT_BRIEF          = "RegEXp Compiler, to bytecode and C"
+PROJECT_LOGO           = 
+OUTPUT_DIRECTORY       = "@DOXYGEN_OUTPUT_DIR@"
+CREATE_SUBDIRS         = NO
+ALLOW_UNICODE_NAMES    = NO
+OUTPUT_LANGUAGE        = English
+BRIEF_MEMBER_DESC      = YES
+REPEAT_BRIEF           = YES
+ABBREVIATE_BRIEF       = 
+ALWAYS_DETAILED_SEC    = NO
+INLINE_INHERITED_MEMB  = NO
+FULL_PATH_NAMES        = YES
+STRIP_FROM_PATH        = "@PROJECT_SOURCE_DIR@"
+STRIP_FROM_INC_PATH    = "@PROJECT_SOURCE_DIR@/include"
+SHORT_NAMES            = NO
+JAVADOC_AUTOBRIEF      = YES
+JAVADOC_BANNER         = NO
+QT_AUTOBRIEF           = NO
+MULTILINE_CPP_IS_BRIEF = NO
+PYTHON_DOCSTRING       = YES
+INHERIT_DOCS           = YES
+SEPARATE_MEMBER_PAGES  = NO
+TAB_SIZE               = 4
+ALIASES                = 
+OPTIMIZE_OUTPUT_FOR_C  = YES
+OPTIMIZE_OUTPUT_JAVA   = NO
+OPTIMIZE_FOR_FORTRAN   = NO
+OPTIMIZE_OUTPUT_VHDL   = NO
+OPTIMIZE_OUTPUT_SLICE  = NO
+EXTENSION_MAPPING      = 
+MARKDOWN_SUPPORT       = YES
+TOC_INCLUDE_HEADINGS   = 5
+MARKDOWN_ID_STYLE      = DOXYGEN
+AUTOLINK_SUPPORT       = YES
+BUILTIN_STL_SUPPORT    = NO
+CPP_CLI_SUPPORT        = NO
+SIP_SUPPORT            = NO
+IDL_PROPERTY_SUPPORT   = YES
+DISTRIBUTE_GROUP_DOC   = NO
+GROUP_NESTED_COMPOUNDS = NO
+SUBGROUPING            = YES
+INLINE_GROUPED_CLASSES = NO
+INLINE_SIMPLE_STRUCTS  = NO
+TYPEDEF_HIDES_STRUCT   = NO
+LOOKUP_CACHE_SIZE      = 0
+NUM_PROC_THREADS       = 1
+TIMESTAMP              = NO
+
+#---------------------------------------------------------------------------
+# Build related configuration options
+#---------------------------------------------------------------------------
+
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_PRIV_VIRTUAL   = NO
+EXTRACT_PACKAGE        = NO
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_LOCAL_METHODS  = NO
+EXTRACT_ANON_NSPACES   = NO
+RESOLVE_UNNAMED_PARAMS = YES
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+HIDE_FRIEND_COMPOUNDS  = NO
+HIDE_IN_BODY_DOCS      = NO
+INTERNAL_DOCS          = NO
+CASE_SENSE_NAMES       = YES
+HIDE_SCOPE_NAMES       = NO
+HIDE_COMPOUND_REFERENCE= NO
+SHOW_HEADERFILE        = YES
+SHOW_INCLUDE_FILES     = YES
+SHOW_GROUPED_MEMB_INC  = NO
+FORCE_LOCAL_INCLUDES   = NO
+INLINE_INFO            = YES
+SORT_MEMBER_DOCS       = YES
+SORT_BRIEF_DOCS        = NO
+SORT_MEMBERS_CTORS_1ST = NO
+SORT_GROUP_NAMES       = NO
+SORT_BY_SCOPE_NAME     = NO
+STRICT_PROTO_MATCHING  = NO
+GENERATE_TODOLIST      = YES
+GENERATE_TESTLIST      = YES
+GENERATE_BUGLIST       = YES
+GENERATE_DEPRECATEDLIST= YES
+ENABLED_SECTIONS       = 
+MAX_INITIALIZER_LINES  = 30
+SHOW_USED_FILES        = YES
+SHOW_FILES             = YES
+SHOW_NAMESPACES        = YES
+FILE_VERSION_FILTER    = 
+LAYOUT_FILE            = 
+CITE_BIB_FILES         = 
+
+#---------------------------------------------------------------------------
+# Configuration options related to warning and progress messages
+#---------------------------------------------------------------------------
+
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_IF_INCOMPLETE_DOC = YES
+WARN_NO_PARAMDOC       = NO
+WARN_IF_UNDOC_ENUM_VAL = NO
+WARN_AS_ERROR          = NO
+WARN_FORMAT            = "$file:$line: $text"
+WARN_LINE_FORMAT       = "at line $line of file $file"
+WARN_LOGFILE           = 
+
+#---------------------------------------------------------------------------
+# Configuration options related to the input files
+#---------------------------------------------------------------------------
+
+INPUT                  = "@PROJECT_SOURCE_DIR@/include" \
+                         "@PROJECT_SOURCE_DIR@/docs/Chomsky3.i"
+INPUT_ENCODING         = UTF-8
+INPUT_FILE_ENCODING    = 
+FILE_PATTERNS          = *.h \
+                         *.c \
+                         *.i
+RECURSIVE              = YES
+EXCLUDE                = 
+EXCLUDE_SYMLINKS       = NO
+EXCLUDE_PATTERNS       = */test/* \
+                         */tests/* \
+                         */build/*
+EXCLUDE_SYMBOLS        = 
+EXAMPLE_PATH           = "@PROJECT_SOURCE_DIR@/examples"
+EXAMPLE_PATTERNS       = *
+EXAMPLE_RECURSIVE      = NO
+IMAGE_PATH             = "@PROJECT_SOURCE_DIR@/docs/images"
+INPUT_FILTER           = 
+FILTER_PATTERNS        = 
+FILTER_SOURCE_FILES    = NO
+FILTER_SOURCE_PATTERNS = 
+USE_MDFILE_AS_MAINPAGE = "@PROJECT_SOURCE_DIR@/docs/Chomsky3.i"
+
+#---------------------------------------------------------------------------
+# Configuration options related to source browsing
+#---------------------------------------------------------------------------
+
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = YES
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+REFERENCES_LINK_SOURCE = YES
+SOURCE_TOOLTIPS        = YES
+USE_HTAGS              = NO
+VERBATIM_HEADERS       = YES
+CLANG_ASSISTED_PARSING = NO
+CLANG_ADD_INC_PATHS    = YES
+CLANG_OPTIONS          = 
+CLANG_DATABASE_PATH    = 
+
+#---------------------------------------------------------------------------
+# Configuration options related to the alphabetical class index
+#---------------------------------------------------------------------------
+
+ALPHABETICAL_INDEX     = YES
+IGNORE_PREFIX          = 
+
+#---------------------------------------------------------------------------
+# Configuration options related to the HTML output
+#---------------------------------------------------------------------------
+
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+HTML_FILE_EXTENSION    = .html
+HTML_HEADER            = 
+HTML_FOOTER            = 
+HTML_STYLESHEET        = 
+HTML_EXTRA_STYLESHEET  = 
+HTML_EXTRA_FILES       = 
+HTML_COLORSTYLE        = AUTO_LIGHT
+HTML_COLORSTYLE_HUE    = 220
+HTML_COLORSTYLE_SAT    = 100
+HTML_COLORSTYLE_GAMMA  = 80
+HTML_DYNAMIC_MENUS     = YES
+HTML_DYNAMIC_SECTIONS  = NO
+HTML_CODE_FOLDING      = YES
+HTML_COPY_CLIPBOARD    = YES
+HTML_PROJECT_COOKIE    = 
+HTML_INDEX_NUM_ENTRIES = 100
+GENERATE_DOCSET        = NO
+GENERATE_HTMLHELP      = NO
+GENERATE_QHP           = NO
+GENERATE_ECLIPSEHELP   = NO
+DISABLE_INDEX          = NO
+GENERATE_TREEVIEW      = YES
+FULL_SIDEBAR           = NO
+ENUM_VALUES_PER_LINE   = 4
+TREEVIEW_WIDTH         = 250
+EXT_LINKS_IN_WINDOW    = NO
+OBFUSCATE_EMAILS       = YES
+HTML_FORMULA_FORMAT    = png
+FORMULA_FONTSIZE       = 10
+FORMULA_MACROFILE      = 
+USE_MATHJAX            = NO
+SEARCHENGINE           = YES
+SERVER_BASED_SEARCH    = NO
+EXTERNAL_SEARCH        = NO
+SEARCHENGINE_URL       = 
+SEARCHDATA_FILE        = searchdata.xml
+EXTERNAL_SEARCH_ID     = 
+EXTRA_SEARCH_MAPPINGS  = 
+
+#---------------------------------------------------------------------------
+# Configuration options related to the LaTeX
