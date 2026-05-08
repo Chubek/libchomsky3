@@ -5,7 +5,7 @@
  * Uses a backtracking VM with resource limits to prevent ReDoS.
  */
 
-#include "simmatch.h"
+#include "chomsky3/simmatch.h"
 #include "chomsky3/bytecode.h"
 #include <stdlib.h>
 #include <string.h>

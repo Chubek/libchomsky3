@@ -11,8 +11,8 @@ project(libchomsky3
 # ============================================================================
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
-option(CHOMSKY3_BUILD_TESTS "Build test suite" ON)
-option(CHOMSKY3_BUILD_EXAMPLES "Build example programs" ON)
+option(CHOMSKY3_BUILD_TESTS "Build test suite" OFF)
+option(CHOMSKY3_BUILD_EXAMPLES "Build example programs" OFF)
 option(CHOMSKY3_ENABLE_JIT "Enable JIT compilation support via SLJIT" ON)
 option(CHOMSKY3_INSTALL "Generate install target" ON)
 
@@ -55,6 +55,7 @@ if(CHOMSKY3_ENABLE_JIT)
             ${CMAKE_CURRENT_SOURCE_DIR}/third_party
             ${SLJIT_DIR}/sljit_src
             ${SLJIT_DIR}/regex_src
+	    o
         )
 
         target_compile_definitions(sljit PRIVATE
