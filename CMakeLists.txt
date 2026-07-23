@@ -55,7 +55,6 @@ if(CHOMSKY3_ENABLE_JIT)
             ${CMAKE_CURRENT_SOURCE_DIR}/third_party
             ${SLJIT_DIR}/sljit_src
             ${SLJIT_DIR}/regex_src
-	    o
         )
 
         target_compile_definitions(sljit PRIVATE

@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "error.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -34,6 +36,10 @@ typedef enum {
     CHOMSKY3_NODE_REPEAT,       /* Bounded repetition {m,n} */
     CHOMSKY3_NODE_GROUP,        /* Capturing group (...) */
     CHOMSKY3_NODE_BACKREF,      /* Backreference \1 */
+    CHOMSKY3_NODE_LOOKAHEAD,    /* Positive lookahead (?=...) */
+    CHOMSKY3_NODE_LOOKAHEAD_NEG,/* Negative lookahead (?!...) */
+    CHOMSKY3_NODE_WORD_BOUNDARY,/* Word boundary \b */
+    CHOMSKY3_NODE_NWORD_BOUNDARY,/* Non-word boundary \B */
 } chomsky3_node_type_t;
 
 /* Character class flags */
@@ -87,6 +93,8 @@ struct chomsky3_regex {
     size_t num_groups;
     char *pattern;              /* Original pattern string */
     size_t pattern_length;
+    chomsky3_error_t parse_error; /* Parse error code (CHOMSKY3_OK if none) */
+    size_t parse_error_pos;     /* Byte offset of parse error */
 };
 
 /**

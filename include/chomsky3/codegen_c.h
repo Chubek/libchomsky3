@@ -23,6 +23,45 @@ extern "C" {
 /* Forward declarations */
 typedef struct chomsky3_c_generator chomsky3_c_generator_t;
 typedef struct chomsky3_c_output chomsky3_c_output_t;
+typedef struct chomsky3_bytecode chomsky3_bytecode_t;
+
+/* Direct bytecode-to-C translation (simple one-shot interface) */
+
+/**
+ * Generate C source from compiled bytecode.
+ *
+ * @param ctx Context
+ * @param bytecode Bytecode to translate
+ * @param function_name Name for the generated match function
+ * @param flags Compilation flags (chomsky3_flags_t)
+ * @param output Output C source string (must be freed by caller)
+ * @return Error code
+ */
+chomsky3_error_t chomsky3_codegen_c_from_bytecode(
+    chomsky3_context_t *ctx,
+    const chomsky3_bytecode_t *bytecode,
+    const char *function_name,
+    uint32_t flags,
+    char **output
+);
+
+/**
+ * Generate C source from IR.
+ *
+ * @param ctx Context
+ * @param ir Intermediate representation
+ * @param function_name Name for the generated match function
+ * @param flags Compilation flags (chomsky3_flags_t)
+ * @param output Output C source string (must be freed by caller)
+ * @return Error code
+ */
+chomsky3_error_t chomsky3_codegen_c_from_ir(
+    chomsky3_context_t *ctx,
+    const chomsky3_ir_t *ir,
+    const char *function_name,
+    uint32_t flags,
+    char **output
+);
 
 /* C code generation style */
 typedef enum {

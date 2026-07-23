@@ -67,6 +67,7 @@ typedef struct {
     double total_time_ms;           /* Total time spent optimizing */
     size_t num_passes_run;          /* Number of passes executed */
     chomsky3_pass_stats_t *pass_stats; /* Per-pass statistics (dynamically allocated) */
+    bool print_stats;               /* If true, print stats after optimization */
     
     /* Aggregate statistics */
     size_t instructions_removed;

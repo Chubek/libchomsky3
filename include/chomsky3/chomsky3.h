@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "error.h"
+#include "chomsky3/error.h"
 
 #ifdef __cplusplus
 extern "C" {
