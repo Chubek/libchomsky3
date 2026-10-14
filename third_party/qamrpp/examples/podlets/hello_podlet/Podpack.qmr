@@ -1,0 +1,5 @@
+name = hello_podlet
+version = 1.0.0
+entrypoint = Podlet.cpp
+podlet_api = 1
+format_version = 1

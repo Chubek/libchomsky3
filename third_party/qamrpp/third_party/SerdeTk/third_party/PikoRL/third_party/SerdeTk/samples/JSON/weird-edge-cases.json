@@ -1,0 +1,39 @@
+{
+  "empty_object": {},
+  "empty_array": [],
+  "unicode": {
+    "arabic": "سلام",
+    "japanese": "こんにちは",
+    "emoji": "🦀🚀🔥"
+  },
+  "numbers": {
+    "bigint_like": 9223372036854775807,
+    "negative_zero": -0,
+    "scientific": 6.022e23,
+    "tiny": 1.0e-300
+  },
+  "strings": {
+    "escaped": "Line1\nLine2\tTabbed\\Backslash\"Quote\"",
+    "json_inside_json": "{\"key\":\"value\"}"
+  },
+  "mixed": [
+    true,
+    false,
+    null,
+    {
+      "nested": [
+        {
+          "deep": [
+            {
+              "deeper": [
+                {
+                  "bottom": "done"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

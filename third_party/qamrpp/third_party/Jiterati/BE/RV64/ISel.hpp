@@ -1,0 +1,4 @@
+#ifndef JITERATI_BE_RV64_ISEL_HPP_INCLUDED
+#define JITERATI_BE_RV64_ISEL_HPP_INCLUDED
+#include "RV64.hpp"
+#endif

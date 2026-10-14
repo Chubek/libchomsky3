@@ -1,0 +1,6 @@
+queue q = mpsc.ring(128);
+signal s = eventfd();
+mutex m = semaphore("/taskflow.lock", 1);
+
+pipe producer = enqueue(q) -> notify(s);
+pipe consumer = wait(s) -> lock(m) -> dequeue(q) -> unlock(m);

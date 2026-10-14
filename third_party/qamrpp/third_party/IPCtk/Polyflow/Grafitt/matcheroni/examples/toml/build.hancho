@@ -1,0 +1,8 @@
+#-------------------------------------------------------------------------------
+# TOML parser example
+
+lib = hancho(
+    hancho.base_rules.cpp_lib,
+    in_srcs = "toml_parser.cpp",
+    out_lib = "toml_parser.a",
+)

@@ -1,0 +1,11 @@
+{
+  "lua": [
+    "syntax.lua",
+    "directives.lua",
+    "completions.lua",
+    "menu.lua"
+  ],
+  "idl": [
+    "Python.idl"
+  ]
+}

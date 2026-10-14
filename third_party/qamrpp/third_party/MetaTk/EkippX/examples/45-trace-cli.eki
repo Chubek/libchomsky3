@@ -1,0 +1,2 @@
+# Run: ekippx-cli --trace --trace-file /tmp/ekippx-trace.json 45-trace-cli.eki
+@config(trace, true)@tracepoint(example-start)@emitln(&upper(traceable))

@@ -1,0 +1,100 @@
+{
+  "version": "2.1",
+  "metadata": {
+    "generated_at": "2026-05-15T21:00:00Z",
+    "generator": {
+      "name": "infractl",
+      "build": 9182,
+      "features": [
+        "templating",
+        "multi-region",
+        "auto-heal"
+      ]
+    }
+  },
+  "regions": [
+    {
+      "name": "eu-west-1",
+      "enabled": true,
+      "quotas": {
+        "cpu": 128,
+        "memory_gb": 512,
+        "storage_tb": 40.5
+      },
+      "subnets": [
+        {
+          "cidr": "10.0.0.0/24",
+          "public": true,
+          "routes": [
+            {
+              "destination": "0.0.0.0/0",
+              "gateway": "igw-001"
+            }
+          ]
+        },
+        {
+          "cidr": "10.0.1.0/24",
+          "public": false,
+          "routes": []
+        }
+      ]
+    }
+  ],
+  "services": {
+    "auth": {
+      "image": "registry.local/auth:1.9.2",
+      "replicas": 3,
+      "env": {
+        "JWT_SECRET": "base64:YWJjMTIz",
+        "ENABLE_2FA": true,
+        "MAX_LOGIN_ATTEMPTS": 5
+      },
+      "healthcheck": {
+        "path": "/healthz",
+        "interval_sec": 15,
+        "timeout_sec": 3
+      }
+    },
+    "db": {
+      "engine": "postgresql",
+      "version": "16.2",
+      "replication": {
+        "mode": "sync",
+        "nodes": [
+          {
+            "host": "db-01.internal",
+            "priority": 100
+          },
+          {
+            "host": "db-02.internal",
+            "priority": 90
+          }
+        ]
+      }
+    }
+  },
+  "audit": [
+    {
+      "event": "deploy",
+      "actor": {
+        "id": 1021,
+        "roles": ["admin", "devops"]
+      },
+      "success": true
+    },
+    {
+      "event": "scale",
+      "actor": null,
+      "success": false,
+      "errors": [
+        {
+          "code": "QUOTA_EXCEEDED",
+          "details": {
+            "requested": 256,
+            "available": 128
+          }
+        }
+      ]
+    }
+  ]
+}

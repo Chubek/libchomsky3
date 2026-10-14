@@ -1,0 +1,10 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/jiterati
+
+Name: Jiterati
+Description: Jiterati compiler infrastructure and JIT engine
+Version: @PROJECT_VERSION@
+Libs: -L${libdir} -ljiterati
+Cflags: -I${includedir}

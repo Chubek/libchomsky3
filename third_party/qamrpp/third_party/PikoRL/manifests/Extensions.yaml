@@ -1,0 +1,271 @@
+extensions:
+  - name: "auto-complete"
+    path: "extensions/AutoComplete"
+    task: |
+      The autocomplete extension works similar to that of Fish and other
+      Readline libraries.
+      The extension uses Lua or S7 as its bedrock for specifying auto-complete.
+      For example, to create an auto-complete for C11:
+
+      E = PikoRL.autocomplete.new("ISO C11")
+
+      E.Import "std.regex"
+      E.Import "std.peg"
+
+      E.Keywords =
+      {
+        "auto", "break", "case", "char", "const", "continue",
+        "default", "do", "double", "else", "enum", "extern",
+        "float", "for", "goto", "if", "inline", "int",
+        "long", "register", "restrict", "return", "short",
+        "signed", "sizeof", "static", "struct", "switch",
+        "typedef", "union", "unsigned", "void", "volatile", "while",
+        "_Alignas", "_Alignof", "_Atomic", "_Bool", "_Complex",
+        "_Generic", "_Imaginary", "_Noreturn", "_Static_assert", "_Thread_local"
+      }
+
+      E.Patterns =
+      {
+        IDENTIFIER = "[a-zA-Z_][a-zA-Z0-9_]*",
+        NUMERIC    = "[0-9]+([.][0-9]+)?",
+        STRING     = [["([^"\\]|\\.)*"]],
+        CHARACTER  = [['([^'\\]|\\.)*']],
+        PREPROC    = "#[ \t]*[a-zA-Z_][a-zA-Z0-9_]*"
+      }
+
+      E.Completions =
+      {
+        {
+          trigger = "identifier",
+          pattern = E.Patterns.IDENTIFIER,
+          values = E.Keywords
+        },
+        {
+          trigger = "preproc",
+          pattern = E.Patterns.PREPROC,
+          values =
+          {
+            "#include", "#define", "#ifdef", "#ifndef", "#if",
+            "#elif", "#else", "#endif", "#pragma", "#error", "#undef"
+          }
+        }
+      }
+
+      function E.Suggest(context)
+        return E:match(context)
+      end
+
+      return E
+  - name: "auto-syntax"
+    path: "extensions/AutoSyntax"
+    task: |
+      Syntax highlighting for the REPL and editor surface.
+
+      Example configuration for C11:
+
+      S = PikoRL.autosyn.new("ISO C11")
+
+      S.Import "std.regex"
+      S.Import "std.peg"
+
+      S.Theme =
+      {
+        keyword    = "bright-blue",
+        type       = "cyan",
+        string     = "green",
+        character  = "green",
+        number     = "magenta",
+        comment    = "bright-black",
+        preproc    = "yellow",
+        operator   = "white",
+        identifier = "default"
+      }
+
+      S.Patterns =
+      {
+        KEYWORD   = "\\b(auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|inline|int|long|register|restrict|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while)\\b",
+        TYPE      = "\\b(size_t|ptrdiff_t|FILE|bool)\\b",
+        STRING    = [["([^"\\]|\\.)*"]],
+        CHARACTER = [['([^'\\]|\\.)*']],
+        NUMBER    = "\\b[0-9]+([.][0-9]+)?\\b",
+        COMMENT1  = "//.*$",
+        COMMENT2  = "/\\*.*\\*/",
+        PREPROC   = "#[ \t]*[a-zA-Z_][a-zA-Z0-9_]*",
+        OPERATOR  = "[+\\-*/=%!<>|&%^~?:]+",
+        IDENT     = "[a-zA-Z_][a-zA-Z0-9_]*"
+      }
+
+      S.Rules =
+      {
+        { token = "comment",    pattern = S.Patterns.COMMENT1 },
+        { token = "comment",    pattern = S.Patterns.COMMENT2 },
+        { token = "preproc",    pattern = S.Patterns.PREPROC  },
+        { token = "string",     pattern = S.Patterns.STRING   },
+        { token = "character",  pattern = S.Patterns.CHARACTER },
+        { token = "number",     pattern = S.Patterns.NUMBER   },
+        { token = "keyword",    pattern = S.Patterns.KEYWORD  },
+        { token = "type",       pattern = S.Patterns.TYPE     },
+        { token = "operator",   pattern = S.Patterns.OPERATOR },
+        { token = "identifier", pattern = S.Patterns.IDENT    }
+      }
+
+      function S.Highlight(line)
+        return S:match(line)
+      end
+
+      return S
+    extensions:
+  - name: "auto-command"
+    path: "extensions/AutoCommand"
+    task: |
+      Meta-directives for the REPL.
+
+      Example configuration:
+
+      C = PikoRL.autocmmand.new("REPL Meta Commands")
+
+      C.Prefix = ":"
+
+      C.Commands =
+      {
+        {
+          name = "load",
+          usage = ":load <file>",
+          description = "Load and evaluate a source file.",
+          action = function(args)
+            return PikoRL.loadfile(args[1])
+          end
+        },
+
+        {
+          name = "reload",
+          usage = ":reload",
+          description = "Reload the current environment.",
+          action = function(args)
+            return PikoRL.reload()
+          end
+        },
+
+        {
+          name = "mode",
+          usage = ":mode <language>",
+          description = "Switch the active REPL language mode.",
+          action = function(args)
+            return PikoRL.mode(args[1])
+          end
+        },
+
+        {
+          name = "set",
+          usage = ":set <key> <value>",
+          description = "Change a REPL setting.",
+          action = function(args)
+            return PikoRL.set(args[1], args[2])
+          end
+        },
+
+        {
+          name = "env",
+          usage = ":env",
+          description = "Display environment information.",
+          action = function(args)
+            return PikoRL.env()
+          end
+        },
+
+        {
+          name = "help",
+          usage = ":help",
+          description = "Show available REPL commands.",
+          action = function(args)
+            return C:help()
+          end
+        }
+      }
+
+      function C.Dispatch(input)
+        if input:sub(1, #C.Prefix) ~= C.Prefix then
+          return nil
+        end
+
+        local body = input:sub(#C.Prefix + 1)
+        local argv = C:split(body)
+        local name = argv[1]
+
+        for _, cmd in ipairs(C.Commands) do
+          if cmd.name == name then
+            table.remove(argv, 1)
+            return cmd.action(argv)
+          end
+        end
+
+        return "unknown command: " .. tostring(name)
+      end
+
+      return C
+
+      extensions:
+  - name: "auto-prompt"
+    path: "extensions/AutoPrompt"
+    task: |
+      Semantics-based auto-completion, also known as autosuggest, powered by
+      Machine Learning.
+
+      Example configuration:
+
+      A = PikoRL.autoprompt.new("Semantic Autosuggest")
+
+      A.Model =
+      {
+        backend = "local-transformer",
+        path = "models/autoprompt/default.gguf",
+        max_tokens = 24,
+        temperature = 0.2,
+        top_k = 20,
+        top_p = 0.9
+      }
+
+      A.Context =
+      {
+        history_size = 12,
+        use_buffer = true,
+        use_language_mode = true,
+        use_symbols = true
+      }
+
+      A.Filters =
+      {
+        min_confidence = 0.65,
+        remove_duplicates = true,
+        require_prefix_match = true
+      }
+
+      A.Fallback =
+      {
+        enabled = true,
+        source = "AutoComplete"
+      }
+
+      function A.BuildPrompt(state)
+        return
+          "MODE: " .. state.mode .. "\n" ..
+          "CURSOR_PREFIX: " .. state.prefix .. "\n" ..
+          "VISIBLE_BUFFER:\n" .. state.buffer .. "\n" ..
+          "RECENT_HISTORY:\n" .. table.concat(state.history, "\n")
+      end
+
+      function A.Suggest(state)
+        local prompt = A:BuildPrompt(state)
+        local results = A:infer(prompt)
+
+        if not results or #results == 0 then
+          if A.Fallback.enabled then
+            return PikoRL.extensions.AutoComplete:Suggest(state.prefix)
+          end
+          return {}
+        end
+
+        return A:filter(results, state.prefix)
+      end
+
+      return A

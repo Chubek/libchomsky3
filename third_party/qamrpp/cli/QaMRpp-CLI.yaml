@@ -1,0 +1,92 @@
+program: qamrpp-cli
+version: 0.2.0
+about: QaMRpp command-line interface and interactive REPL
+arguments:
+  - id: help
+    kind: flag
+    names: ["-h", "--help"]
+    help: Show help and exit
+  - id: version
+    kind: flag
+    names: ["--version"]
+    help: Show version and exit
+  - id: script
+    kind: option
+    names: ["-s", "--script"]
+    help: Add script files by glob pattern
+  - id: require
+    kind: option
+    names: ["--require"]
+    help: Add required source unit before scripts
+  - id: load
+    kind: option
+    names: ["--load"]
+    help: Load native library by name or path
+  - id: install_library
+    kind: option
+    names: ["--install-library"]
+    help: Install a native library into QAMRPP_HOME/lib/stdlua
+  - id: remove_library
+    kind: option
+    names: ["--remove-library"]
+    help: Remove a native library from QAMRPP_HOME/lib/stdlua
+  - id: install_podlet
+    kind: option
+    names: ["--install-podlet"]
+    help: Install a podlet archive into QAMRPP_HOME/podlet
+  - id: remove_podlet
+    kind: option
+    names: ["--remove-podlet"]
+    help: Remove a podlet archive from QAMRPP_HOME/podlet
+  - id: name
+    kind: option
+    names: ["--name"]
+    help: Override the installed module/archive name
+  - id: root
+    kind: option
+    names: ["--root"]
+    help: Override the install/remove root directory
+  - id: qbf
+    kind: option
+    names: ["--qbf"]
+    help: Load QBF bundle units into the linker
+  - id: config
+    kind: option
+    names: ["--config"]
+    help: REPL configuration file
+  - id: dump
+    kind: option
+    names: ["--dump"]
+    help: Write AST Graphviz dump
+  - id: serialize
+    kind: flag
+    names: ["--serialize"]
+    help: Print JSON serialization snapshot
+  - id: compile_c
+    kind: flag
+    names: ["--compile-c"]
+    help: Translate linked input to C source
+  - id: compile_wasm
+    kind: flag
+    names: ["--compile-wasm"]
+    help: Translate linked input to WAT source
+  - id: output_file
+    kind: option
+    names: ["--output-file"]
+    help: Write translation output to file
+  - id: compile_out
+    kind: option
+    names: ["--compile-out"]
+    help: Alias of --output-file
+  - id: no_autocomplete
+    kind: flag
+    names: ["--no-autocomplete"]
+    help: Start REPL with autocomplete disabled
+  - id: no_color
+    kind: flag
+    names: ["--no-color"]
+    help: Start REPL with syntax colors disabled
+  - id: directives_file
+    kind: option
+    names: ["--directives-file"]
+    help: Execute REPL directives from a file before starting

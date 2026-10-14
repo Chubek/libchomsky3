@@ -1,0 +1,66 @@
+command "sed"
+{
+    help-string
+    {
+        Stream editor profile with script files, expressions, and in-place edits
+    };
+
+    param "n/quiet"
+    {
+        help-string
+        {
+            Suppress automatic pattern space printing
+        };
+    };
+
+    param "E/regexp-extended"
+    {
+        help-string
+        {
+            Use extended regular expressions
+        };
+    };
+
+    param "i/in-place="
+    {
+        help-string
+        {
+            Edit files in place with optional backup suffix
+        };
+        default = "";
+    };
+
+    param "f/file="
+    {
+        help-string
+        {
+            Load script file; repeat for multiple scripts
+        };
+        repeatable = true;
+    };
+
+    param "e/expression="
+    {
+        help-string
+        {
+            Add expression script; repeat for multiple expressions
+        };
+        repeatable = true;
+    };
+
+    param "input"
+    {
+        positional = true;
+        variadic = true;
+        help-string
+        {
+            Input files, stdin when omitted
+        };
+    };
+};
+
+pre-evaluate
+{
+    exec = "/usr/bin/sed";
+    sanitize = "stdlib/shell.sh";
+};

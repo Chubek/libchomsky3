@@ -1,0 +1,62 @@
+format BSON
+category binary
+extensions .bson
+mime application/bson
+encoding binary
+adapter JSONAdapter
+
+identity {
+  canonical-name BSON
+  description BSON document model projected via common model
+}
+
+model {
+  root object
+  object map
+  array sequence
+  scalar-types null boolean int uint double string binary
+  bson-types object-id datetime regex decimal128 javascript min-key max-key
+}
+
+binary-layout {
+  endian little
+  document-length prefix-int32
+  cstring-keys true
+  type-tag per-field
+}
+
+parse {
+  input bytes
+  strategy length-delimited-recursive
+  root-requirement object
+  duplicate-keys policy last-wins
+  unsupported-types policy best-effort-string
+}
+
+dump {
+  output bytes
+  root-object required
+  canonical-field-order source
+  numeric narrowing checked
+}
+
+query {
+  engines API STKQ JQ SPARQL
+  default-engine API
+}
+
+validation {
+  standards JSON-Schema
+  mode via-json-adapter
+}
+
+conversion {
+  adapters JSONAdapter YAML.JSONAdapter XML.JSONAdapter MessagePack.JSONAdapter
+  loss-reporting required
+  risks object-id-string-coercion datetime-precision-loss regex-option-loss
+}
+
+binarization {
+  source JSON YAML XML
+  entrypoint json::Binarize<bson::JSONAdapter>
+}

@@ -1,0 +1,867 @@
+EkippXAPI:
+  meta:
+    name: "EkippX"
+    header: "EkippX.hpp"
+    kind: "header-only-cpp-library"
+    status: "tightened-baseline"
+    version: "0.1"
+    api_namespace: "ekippx"
+    description: >
+      EkippX is the successor to ekipp.hpp. It is a header-only C++ macro-expansion,
+      preprocessing, and text-transformation library with a native DSL-oriented front end.
+      DSLtk.hpp is used as a parsing and host-DSL substrate, but this manifest defines
+      only the public API surface of EkippX.hpp.
+    influences:
+      - "ekipp.hpp is treated as a loose source of truth"
+      - "DSLtk.hpp provides embedded DSL and combinatory parsing support"
+      - "lambda-heavy authoring model for macro, directive, function, and expander registration"
+
+  language:
+    standard: "C++20"
+    exception_model: "exception-based-with-optional-status-results"
+    memory_model: "value-semantics-and-raii"
+    threading:
+      default: "single-runtime-instance-is-not-assumed-thread-safe"
+      note: "Independent contexts may be used concurrently if host code isolates them"
+
+  design_principles:
+    - "Header-only and embeddable"
+    - "Host-friendly C++ API instead of C ABI"
+    - "Lambdas are first-class for custom behavior registration"
+    - "DSLtk-backed parser integration"
+    - "Configurable sigils, delimiters, and expansion semantics"
+    - "Loose backward influence from ekipp.hpp, not source compatibility lockstep"
+
+  external_dependencies:
+    - name: "DSLtk.hpp"
+      role: "native DSL interface and combinatory parsing substrate"
+    - name: "STL"
+      role: "core containers, strings, functional objects, variants, optional values"
+
+  namespaces:
+    public:
+      - "ekippx"
+      - "ekippx::literals"
+      - "ekippx::config"
+      - "ekippx::ast"
+      - "ekippx::runtime"
+      - "ekippx::registry"
+      - "ekippx::detail"
+    rules:
+      - "Only ekippx and selected nested namespaces are public API"
+      - "ekippx::detail is non-stable implementation space"
+
+  aliases:
+    - name: "String"
+      target: "std::string"
+    - name: "StringView"
+      target: "std::string_view"
+    - name: "Path"
+      target: "std::filesystem::path"
+    - name: "StringList"
+      target: "std::vector<std::string>"
+    - name: "StringMap"
+      target: "std::unordered_map<std::string, std::string>"
+    - name: "ByteBuffer"
+      target: "std::vector<std::uint8_t>"
+    - name: "Clock"
+      target: "std::chrono::steady_clock"
+
+  enums:
+    - name: "StatusCode"
+      values:
+        - "ok"
+        - "warning"
+        - "parse_error"
+        - "lex_error"
+        - "macro_error"
+        - "directive_error"
+        - "function_error"
+        - "expander_error"
+        - "include_error"
+        - "io_error"
+        - "config_error"
+        - "plugin_error"
+        - "limit_error"
+        - "internal_error"
+
+    - name: "DiagnosticLevel"
+      values:
+        - "note"
+        - "warning"
+        - "error"
+        - "fatal"
+
+    - name: "TokenKind"
+      values:
+        - "text"
+        - "whitespace"
+        - "newline"
+        - "comment"
+        - "directive"
+        - "function"
+        - "expander"
+        - "string_single"
+        - "string_double"
+        - "literal_quoted"
+        - "number"
+        - "identifier"
+        - "atomic"
+        - "delimiter"
+        - "end_of_file"
+
+    - name: "NodeKind"
+      values:
+        - "document"
+        - "text"
+        - "directive_call"
+        - "function_call"
+        - "expander_call"
+        - "macro_definition"
+        - "macro_invocation"
+        - "conditional_block"
+        - "loop_block"
+        - "include_statement"
+        - "capture_block"
+        - "atomic"
+        - "list_literal"
+        - "string_literal"
+
+    - name: "ValueKind"
+      values:
+        - "null_value"
+        - "boolean"
+        - "integer"
+        - "floating"
+        - "string"
+        - "literal_string"
+        - "token"
+        - "list"
+        - "map"
+        - "path"
+
+    - name: "SymbolKind"
+      values:
+        - "macro_object"
+        - "macro_function"
+        - "symbol"
+        - "constant"
+        - "alias"
+        - "counter"
+        - "builtin"
+
+    - name: "ScopeKind"
+      values:
+        - "global"
+        - "file"
+        - "block"
+        - "macro"
+        - "loop"
+        - "capture"
+        - "temporary"
+        - "plugin"
+
+    - name: "ExpansionMode"
+      values:
+        - "eager"
+        - "lazy"
+        - "literal"
+        - "disabled"
+
+    - name: "PatternMode"
+      values:
+        - "literal"
+        - "glob"
+        - "regex"
+
+    - name: "NewlineMode"
+      values:
+        - "preserve"
+        - "lf"
+        - "crlf"
+        - "platform"
+
+    - name: "MissingSymbolPolicy"
+      values:
+        - "empty"
+        - "leave_as_is"
+        - "warn"
+        - "error"
+
+    - name: "IncludePolicy"
+      values:
+        - "allow"
+        - "once"
+        - "sandboxed"
+        - "deny"
+
+    - name: "ShellPolicy"
+      values:
+        - "inherit"
+        - "allow"
+        - "deny"
+
+    - name: "TruthinessMode"
+      values:
+        - "classic"
+        - "strict"
+        - "custom"
+
+  exceptions:
+    - name: "Error"
+      base: "std::runtime_error"
+      description: "Base exception for all EkippX failures"
+
+    - name: "LexError"
+      base: "Error"
+    - name: "ParseError"
+      base: "Error"
+    - name: "DirectiveError"
+      base: "Error"
+    - name: "FunctionError"
+      base: "Error"
+    - name: "ExpanderError"
+      base: "Error"
+    - name: "MacroError"
+      base: "Error"
+    - name: "IncludeError"
+      base: "Error"
+    - name: "ConfigError"
+      base: "Error"
+    - name: "SerializationError"
+      base: "Error"
+    - name: "LimitError"
+      base: "Error"
+
+  structs:
+    - name: "SourceLocation"
+      fields:
+        - { name: "source_name", type: "String" }
+        - { name: "line", type: "std::size_t" }
+        - { name: "column", type: "std::size_t" }
+        - { name: "offset", type: "std::size_t" }
+
+    - name: "SourceRange"
+      fields:
+        - { name: "begin", type: "SourceLocation" }
+        - { name: "end", type: "SourceLocation" }
+
+    - name: "Diagnostic"
+      fields:
+        - { name: "level", type: "DiagnosticLevel" }
+        - { name: "code", type: "String" }
+        - { name: "message", type: "String" }
+        - { name: "range", type: "std::optional<SourceRange>" }
+
+    - name: "Token"
+      fields:
+        - { name: "kind", type: "TokenKind" }
+        - { name: "text", type: "String" }
+        - { name: "range", type: "SourceRange" }
+
+    - name: "Value"
+      description: >
+        Dynamic runtime value inspired by ekipp::Value but modernized for C++.
+        Used for config, structured arguments, plugin data, and future DSL-facing APIs.
+      storage:
+        variant:
+          - "std::monostate"
+          - "bool"
+          - "std::int64_t"
+          - "double"
+          - "String"
+          - "StringList"
+          - "std::unordered_map<std::string, Value>"
+          - "Path"
+      operations:
+        - "kind"
+        - "is<T>"
+        - "as<T>"
+        - "to_string"
+
+    - name: "Limits"
+      fields:
+        - { name: "max_input_size", type: "std::size_t", default: 4194304 }
+        - { name: "max_output_size", type: "std::size_t", default: 16777216 }
+        - { name: "max_include_depth", type: "std::size_t", default: 64 }
+        - { name: "max_recursion_depth", type: "std::size_t", default: 32 }
+        - { name: "max_arguments", type: "std::size_t", default: 64 }
+        - { name: "max_scope_depth", type: "std::size_t", default: 128 }
+        - { name: "max_trace_depth", type: "std::size_t", default: 256 }
+        - { name: "max_macro_name_length", type: "std::size_t", default: 256 }
+        - { name: "max_include_path_count", type: "std::size_t", default: 128 }
+
+    - name: "SigilConfig"
+      fields:
+        - { name: "directive_sigil", type: "String", default: "@" }
+        - { name: "function_sigil", type: "String", default: "&" }
+        - { name: "expander_sigil", type: "String", default: "$" }
+        - { name: "directive_lbrack", type: "String", default: "(" }
+        - { name: "directive_rbrack", type: "String", default: ")" }
+        - { name: "function_lbrack", type: "String", default: "(" }
+        - { name: "function_rbrack", type: "String", default: ")" }
+        - { name: "expander_lbrack", type: "String", default: "{" }
+        - { name: "expander_rbrack", type: "String", default: "}" }
+        - { name: "quote_left", type: "String", default: "`" }
+        - { name: "quote_right", type: "String", default: "`" }
+        - { name: "separator", type: "String", default: "," }
+        - { name: "all_args_separator", type: "String", default: " " }
+        - { name: "list_separator", type: "String", default: "," }
+
+    - name: "LexOptions"
+      fields:
+        - { name: "allow_comments", type: "bool", default: true }
+        - { name: "allow_single_quoted_strings", type: "bool", default: true }
+        - { name: "allow_double_quoted_strings", type: "bool", default: true }
+        - { name: "preserve_whitespace", type: "bool", default: true }
+        - { name: "normalize_newlines", type: "NewlineMode", default: "preserve" }
+        - { name: "sigils", type: "SigilConfig" }
+
+    - name: "ParseOptions"
+      fields:
+        - { name: "pattern_mode", type: "PatternMode", default: "glob" }
+        - { name: "truthiness_mode", type: "TruthinessMode", default: "classic" }
+        - { name: "allow_atomics", type: "bool", default: true }
+        - { name: "allow_plugin_atomics", type: "bool", default: true }
+        - { name: "dsl_enabled", type: "bool", default: true }
+
+    - name: "RuntimeOptions"
+      fields:
+        - { name: "missing_symbol_policy", type: "MissingSymbolPolicy", default: "empty" }
+        - { name: "missing_env_policy", type: "MissingSymbolPolicy", default: "empty" }
+        - { name: "include_policy", type: "IncludePolicy", default: "allow" }
+        - { name: "shell_policy", type: "ShellPolicy", default: "deny" }
+        - { name: "strict_mode", type: "bool", default: false }
+        - { name: "allow_redefine", type: "bool", default: true }
+        - { name: "export_scoped_symbols", type: "bool", default: false }
+        - { name: "freeze_macros", type: "bool", default: false }
+        - { name: "trace_enabled", type: "bool", default: false }
+
+    - name: "EnvironmentOptions"
+      fields:
+        - { name: "include_paths", type: "std::vector<Path>" }
+        - { name: "working_directory", type: "Path" }
+        - { name: "stdin_name", type: "String", default: "<stdin>" }
+        - { name: "env_overrides", type: "StringMap" }
+
+    - name: "Config"
+      fields:
+        - { name: "limits", type: "Limits" }
+        - { name: "lex", type: "LexOptions" }
+        - { name: "parse", type: "ParseOptions" }
+        - { name: "runtime", type: "RuntimeOptions" }
+        - { name: "environment", type: "EnvironmentOptions" }
+        - { name: "metadata", type: "std::unordered_map<std::string, Value>" }
+
+    - name: "MacroParameters"
+      fields:
+        - { name: "names", type: "std::vector<std::string>" }
+        - { name: "variadic", type: "bool", default: false }
+
+    - name: "MacroDefinition"
+      fields:
+        - { name: "name", type: "String" }
+        - { name: "parameters", type: "std::optional<MacroParameters>" }
+        - { name: "body", type: "String" }
+        - { name: "literal_body", type: "bool" }
+        - { name: "defined_at", type: "std::optional<SourceLocation>" }
+        - { name: "metadata", type: "std::unordered_map<std::string, Value>" }
+
+    - name: "Invocation"
+      fields:
+        - { name: "callee", type: "String" }
+        - { name: "args", type: "std::vector<String>" }
+        - { name: "range", type: "std::optional<SourceRange>" }
+
+    - name: "ExpandRequest"
+      fields:
+        - { name: "source_name", type: "String" }
+        - { name: "input", type: "String" }
+        - { name: "config_override", type: "std::optional<Config>" }
+
+    - name: "ExpandResult"
+      fields:
+        - { name: "output", type: "String" }
+        - { name: "diagnostics", type: "std::vector<Diagnostic>" }
+        - { name: "success", type: "bool" }
+
+    - name: "ParseResult"
+      fields:
+        - { name: "tokens", type: "std::vector<Token>" }
+        - { name: "diagnostics", type: "std::vector<Diagnostic>" }
+        - { name: "success", type: "bool" }
+
+    - name: "AstNode"
+      fields:
+        - { name: "kind", type: "NodeKind" }
+        - { name: "text", type: "String" }
+        - { name: "children", type: "std::vector<AstNode>" }
+        - { name: "range", type: "std::optional<SourceRange>" }
+
+    - name: "DirectiveSpec"
+      fields:
+        - { name: "name", type: "String" }
+        - { name: "min_arity", type: "std::size_t" }
+        - { name: "max_arity", type: "std::optional<std::size_t>" }
+        - { name: "expansion_mode", type: "ExpansionMode", default: "eager" }
+        - { name: "allow_block_body", type: "bool", default: false }
+        - { name: "allow_raw_arguments", type: "bool", default: false }
+
+    - name: "FunctionSpec"
+      fields:
+        - { name: "name", type: "String" }
+        - { name: "min_arity", type: "std::size_t" }
+        - { name: "max_arity", type: "std::optional<std::size_t>" }
+        - { name: "pure", type: "bool", default: true }
+        - { name: "expansion_mode", type: "ExpansionMode", default: "eager" }
+
+    - name: "ExpanderSpec"
+      fields:
+        - { name: "name", type: "String" }
+        - { name: "min_arity", type: "std::size_t" }
+        - { name: "max_arity", type: "std::optional<std::size_t>" }
+        - { name: "reads_runtime", type: "bool", default: true }
+
+    - name: "ConditionalSpec"
+      fields:
+        - { name: "name", type: "String" }
+        - { name: "min_arity", type: "std::size_t" }
+        - { name: "max_arity", type: "std::optional<std::size_t>" }
+
+  callback_types:
+    - name: "DirectiveHandler"
+      signature: >
+        std::function<void(class Context&, const Invocation&)>
+      notes:
+        - "Primary registration target for custom directives"
+        - "Lambda-first authoring style is encouraged"
+
+    - name: "FunctionHandler"
+      signature: >
+        std::function<String(class Context&, const Invocation&)>
+
+    - name: "ExpanderHandler"
+      signature: >
+        std::function<String(class Context&, const Invocation&)>
+
+    - name: "ConditionalHandler"
+      signature: >
+        std::function<bool(class Context&, const Invocation&)>
+
+    - name: "MacroLambda"
+      signature: >
+        std::function<String(class Context&, std::span<const std::string>)>
+      notes:
+        - "Preferred API for native C++ function-style macros"
+
+    - name: "AtomicHandler"
+      signature: >
+        std::function<void(class Context&, StringView)>
+      notes:
+        - "For plugin or native atomics such as brk/unbrk-style controls"
+
+  classes:
+    - name: "Context"
+      role: "Primary execution/session object"
+      responsibilities:
+        - "Owns configuration, diagnostics, symbol tables, registries, and runtime state"
+        - "Provides entry points for parsing, expansion, and registration"
+        - "Acts as the bridge between host C++ code and DSLtk-backed parsing"
+      constructors:
+        - "Context()"
+        - "explicit Context(Config config)"
+      methods:
+        - "Config& config()"
+        - "const Config& config() const"
+        - "void reset()"
+        - "void soft_reset()"
+        - "ExpandResult expand(const ExpandRequest& request)"
+        - "String expand_text(StringView input, StringView source_name = \"<memory>\")"
+        - "ParseResult lex(StringView input, StringView source_name = \"<memory>\") const"
+        - "AstNode parse(StringView input, StringView source_name = \"<memory>\") const"
+        - "void emit(StringView text)"
+        - "void emit_line(StringView text)"
+        - "const std::vector<Diagnostic>& diagnostics() const"
+        - "void clear_diagnostics()"
+        - "bool has_errors() const"
+        - "void add_include_path(const Path& path)"
+        - "void set_working_directory(const Path& path)"
+        - "void freeze()"
+        - "void thaw()"
+
+    - name: "SymbolTable"
+      role: "Runtime symbol and macro storage"
+      influenced_by: "ekipp::SymbolTable"
+      methods:
+        - "bool contains(StringView name) const"
+        - "bool contains_macro(StringView name) const"
+        - "bool contains_symbol(StringView name) const"
+        - "void define_symbol(StringView name, StringView value)"
+        - "void define_constant(StringView name, StringView value)"
+        - "void undefine(StringView name)"
+        - "String get(StringView name) const"
+        - "void alias(StringView alias_name, StringView target_name)"
+        - "void unalias(StringView alias_name)"
+        - "std::vector<std::string> names() const"
+
+    - name: "MacroRegistry"
+      role: "Stores object-like, text-like, and native lambda macros"
+      methods:
+        - "void define_object(StringView name, StringView body)"
+        - "void define_literal(StringView name, StringView body)"
+        - "void define_function(StringView name, MacroParameters params, StringView body)"
+        - "void define_lambda(StringView name, MacroLambda fn)"
+        - "void redefine(StringView name, StringView body)"
+        - "void undefine(StringView name)"
+        - "bool contains(StringView name) const"
+        - "MacroDefinition definition(StringView name) const"
+        - "String expand(StringView name, std::span<const std::string> args, Context& ctx) const"
+
+    - name: "DirectiveRegistry"
+      role: "Registry for built-in and user-defined directives"
+      methods:
+        - "void register_directive(DirectiveSpec spec, DirectiveHandler handler)"
+        - "void unregister_directive(StringView name)"
+        - "bool contains(StringView name) const"
+        - "const DirectiveSpec* find(StringView name) const"
+        - "std::vector<std::string> names() const"
+
+    - name: "FunctionRegistry"
+      role: "Registry for callable text/value functions"
+      methods:
+        - "void register_function(FunctionSpec spec, FunctionHandler handler)"
+        - "void unregister_function(StringView name)"
+        - "bool contains(StringView name) const"
+        - "const FunctionSpec* find(StringView name) const"
+        - "std::vector<std::string> names() const"
+
+    - name: "ExpanderRegistry"
+      role: "Registry for symbolic expanders such as ENV, CONFIG, ARG, SYSVAR"
+      methods:
+        - "void register_expander(ExpanderSpec spec, ExpanderHandler handler)"
+        - "void unregister_expander(StringView name)"
+        - "bool contains(StringView name) const"
+        - "const ExpanderSpec* find(StringView name) const"
+        - "std::vector<std::string> names() const"
+
+    - name: "ConditionalRegistry"
+      role: "Registry for conditional predicates"
+      methods:
+        - "void register_conditional(ConditionalSpec spec, ConditionalHandler handler)"
+        - "void unregister_conditional(StringView name)"
+        - "bool contains(StringView name) const"
+        - "const ConditionalSpec* find(StringView name) const"
+        - "std::vector<std::string> names() const"
+
+    - name: "ParserFacade"
+      role: "Thin adapter over DSLtk-backed lexical/parsing facilities"
+      notes:
+        - "Public API belongs to EkippX, while implementation may delegate to DSLtk"
+      methods:
+        - "std::vector<Token> lex(StringView input, StringView source_name = \"<memory>\") const"
+        - "AstNode parse(StringView input, StringView source_name = \"<memory>\") const"
+        - "bool validate(StringView input, StringView source_name = \"<memory>\") const"
+
+    - name: "Serializer"
+      role: "Optional structured rendering or debug serialization support"
+      influenced_by: "ekipp::DirectiveSerializer"
+      methods:
+        - "String serialize_ast(const AstNode& node) const"
+        - "String serialize_value(const Value& value) const"
+        - "String dump_context(const Context& ctx) const"
+
+  free_functions:
+    - name: "make_default_config"
+      returns: "Config"
+
+    - name: "expand"
+      signature: "ExpandResult expand(const ExpandRequest& request)"
+
+    - name: "expand_text"
+      signature: "String expand_text(StringView input)"
+
+    - name: "lex"
+      signature: "ParseResult lex(StringView input, StringView source_name = \"<memory>\")"
+
+    - name: "parse"
+      signature: "AstNode parse(StringView input, StringView source_name = \"<memory>\")"
+
+    - name: "load_ini_config"
+      signature: "Config load_ini_config(const Path& file)"
+
+    - name: "load_ini_config_from_string"
+      signature: "Config load_ini_config_from_string(StringView text, StringView source_name = \"<ini>\")"
+
+  runtime_argument_semantics:
+    reserved_expanders:
+      - "$0"
+      - "$1"
+      - "$2"
+      - "$3"
+      - "$4"
+      - "$5"
+      - "$6"
+      - "$7"
+      - "$8"
+      - "$9"
+      - "$@"
+      - "$*"
+      - "$#"
+    meanings:
+      "$0": "macro name"
+      "$1..$N": "nth argument"
+      "$@": "all arguments separated by space"
+      "$*": "all arguments preserving original positional grouping semantics when applicable"
+      "$#": "all arguments separated by configured separator"
+    notes:
+      - "CONFIG is itself an expander namespace"
+      - "Single-quoted strings never interpolate and never process escapes"
+      - "Double-quoted strings interpolate and process escapes"
+      - "Forced-unexpanded quoting is configurable and not limited to backticks"
+
+  standard_builtin_sets:
+    directives:
+      core:
+        - "reset"
+        - "softreset"
+        - "config"
+        - "unsetconfig"
+        - "loadconfig"
+        - "include"
+        - "sinclude"
+        - "linclude"
+        - "onceinclude"
+        - "pushinclude"
+        - "define"
+        - "deflit"
+        - "redefine"
+        - "undef"
+        - "defsym"
+        - "xdefsym"
+        - "defconst"
+        - "namespace"
+        - "export"
+        - "alias"
+        - "unalias"
+      flow:
+        - "if"
+        - "ifdef"
+        - "ifndef"
+        - "ifempty"
+        - "ifmatch"
+        - "switch"
+        - "for"
+        - "foreach"
+        - "repeat"
+        - "while"
+        - "break"
+        - "continue"
+      output:
+        - "emit"
+        - "emitln"
+        - "discard"
+        - "capture"
+        - "appendcapture"
+        - "block"
+        - "useblock"
+        - "pushoutput"
+        - "popoutput"
+        - "teeoutput"
+      environment:
+        - "chdir"
+        - "pushdir"
+        - "popdir"
+        - "setmeta"
+        - "guard"
+        - "pragma"
+        - "try"
+        - "defer"
+        - "profile"
+        - "endprofile"
+        - "profiledump"
+        - "counter"
+        - "inc"
+        - "dec"
+        - "tracepush"
+        - "tracepop"
+        - "tracepoint"
+        - "symbol-table-dump"
+        - "SerdeTk JSON/MessagePack trace serialization"
+        - "memoize"
+        - "unmemoize"
+        - "clearcache"
+        - "freeze"
+        - "thaw"
+        - "require"
+        - "requireplugin"
+        - "requireconfig"
+        - "plugin"
+        - "unplugin"
+        - "pluginpath"
+
+    functions:
+      - "echo"
+      - "echoln"
+      - "stderr"
+      - "exitWithReason"
+      - "eval"
+      - "leval"
+      - "call"
+      - "abs"
+      - "min"
+      - "max"
+      - "clamp"
+      - "hash"
+      - "checksum"
+      - "jsonEncode"
+      - "jsonDecode"
+      - "csvsplit"
+      - "csvjoin"
+      - "padLeft"
+      - "padRight"
+      - "center"
+      - "repeatText"
+      - "envget"
+      - "envhas"
+      - "counterValue"
+      - "sleep"
+      - "system"
+      - "shell"
+      - "shellStatus"
+      - "shellStrict"
+      - "readfile"
+      - "writefile"
+      - "appendfile"
+      - "exists"
+      - "isfile"
+      - "isdir"
+      - "basename"
+      - "dirname"
+      - "normalizepath"
+      - "joinpath"
+      - "quote"
+      - "unquote"
+      - "typeOf"
+      - "coalesce"
+      - "uuid"
+      - "timestamp"
+
+    expanders:
+      - "ENV"
+      - "SYMBOL"
+      - "SYSVAR"
+      - "CONFIG"
+      - "MACRO"
+      - "CALL"
+      - "ARG"
+      - "LIST"
+      - "MAP"
+      - "RAW"
+      - "ESC"
+      - "META"
+      - "RANDOM"
+      - "UUID"
+      - "COUNTER"
+      - "CACHE"
+      - "PLUGIN"
+      - "DATE"
+      - "FILESTACK"
+      - "SCOPES"
+      - "HIDESET"
+
+    conditionals:
+      - "IfContains?"
+      - "IfStartsWith?"
+      - "IfEndsWith?"
+      - "IfIn?"
+      - "IfType?"
+      - "IfPluginLoaded?"
+      - "IfConfig?"
+
+    atomics:
+      - "brk"
+      - "unbrk"
+
+  dsl_integration:
+    provider: "DSLtk.hpp"
+    usage:
+      - "ParserFacade may delegate tokenization and combinatory parsing to DSLtk"
+      - "Native EDSL helpers may wrap directive/function/expander registration"
+      - "EkippX owns the semantic runtime even when DSLtk performs syntactic parsing"
+    non_goals:
+      - "This manifest does not expose DSLtk's own API"
+      - "This manifest does not require public type identity with DSLtk internals"
+
+  extension_model:
+    registration_style:
+      preferred: "lambda registration"
+      examples:
+        - "register_directive(spec, [](Context& ctx, const Invocation& inv) { ... })"
+        - "register_function(spec, [](Context& ctx, const Invocation& inv) -> String { ... })"
+        - "define_lambda(\"name\", [](Context& ctx, std::span<const std::string> args) -> String { ... })"
+    plugin_notes:
+      - "Optional plugin loading may exist, but the primary extension path is native C++ registration"
+      - "Plugin-defined atomics are allowed if runtime configuration permits them"
+
+  compatibility:
+    relation_to_ekipp:
+      - "EkippX is a successor, not a drop-in replacement"
+      - "Retains recognizable concepts: Value, SourceLocation, SymbolTable, directives, serializer influence"
+      - "Moves toward C++20-friendly API shapes, std::function callbacks, std::optional, std::variant, and std::span"
+    source_compatibility:
+      guaranteed: false
+
+  file_layout_expectations:
+    primary_header: "EkippX.hpp"
+    optional_internal_headers:
+      - "EkippX/detail/*.hpp"
+    guarantee:
+      - "Including EkippX.hpp is sufficient for public API use"
+
+  examples:
+    - name: "lambda_macro"
+      code: |
+        ekippx::Context ctx;
+        ctx.macros().define_lambda("upper", [](ekippx::Context&, std::span<const std::string> args) {
+          std::string s = args.empty() ? std::string{} : args.front();
+          for (char& ch : s) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+          return s;
+        });
+
+    - name: "custom_directive"
+      code: |
+        ekippx::Context ctx;
+        ctx.directives().register_directive(
+          {.name = "hello", .min_arity = 1, .max_arity = 1},
+          [](ekippx::Context& c, const ekippx::Invocation& inv) {
+            c.emit("Hello, " + inv.args.at(0));
+          }
+        );
+
+    - name: "basic_expand"
+      code: |
+        ekippx::Context ctx;
+        auto result = ctx.expand({.source_name = "demo.ekx", .input = "@emitln(\"hello\")"});
+        if (!result.success) {
+          for (const auto& d : result.diagnostics) {
+            std::cerr << d.message << '\n';
+          }
+        }
+
+  intended_member_accessors:
+    Context:
+      - "SymbolTable& symbols()"
+      - "MacroRegistry& macros()"
+      - "DirectiveRegistry& directives()"
+      - "FunctionRegistry& functions()"
+      - "ExpanderRegistry& expanders()"
+      - "ConditionalRegistry& conditionals()"
+      - "ParserFacade& parser()"
+      - "const ParserFacade& parser() const"
+
+  notes:
+    - "Pass 1 implements a coherent baseline with runtime expansion, registries, batteries, tests, examples, and docs tooling."
+    - "This YAML intentionally models only EkippX.hpp."
+    - "DSLtk.hpp is acknowledged as substrate, not described as public API here."
+    - "ekipp.hpp influenced naming and conceptual groupings, but not exact signatures."
+    - "The actual final header may collapse or merge some classes if a smaller surface is preferred."

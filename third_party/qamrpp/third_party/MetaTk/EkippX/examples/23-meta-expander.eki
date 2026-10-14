@@ -1,0 +1,2 @@
+@config(Author, EkippX)
+@emitln($META{Author})

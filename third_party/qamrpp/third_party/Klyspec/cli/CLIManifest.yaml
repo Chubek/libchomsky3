@@ -1,0 +1,32 @@
+# CLI manifest for the klyspec CLI itself.
+#
+# This manifest dogfoods the manifest-driven generation pipeline: the klyspec
+# CLI is bootstrapped from the same capability it exposes to users. Manifests
+# are expressed in YAML and parsed via yaml-cpp (see
+# manifests/CLIManifest.schema.json for the data model).
+program: klyspec
+version: "1.0.0"
+about: Manifest-driven CLI code generator for the Klyspec project.
+arguments:
+  - id: help
+    kind: flag
+    names:
+      - "-h"
+      - "--help"
+    help: Show help and exit.
+  - id: version
+    kind: flag
+    names:
+      - "--version"
+    help: Show version and exit.
+commands:
+  - name: generate-c
+    help: Generate a C CLI source file from a manifest.
+  - name: generate-cpp
+    help: Generate a C++ CLI source file from a manifest.
+  - name: generate-manpage
+    help: Generate a manpage (ROFF) from a manifest.
+  - name: generate-help
+    help: Generate a help page (text) from a manifest.
+  - name: validate
+    help: Validate a CLI manifest.

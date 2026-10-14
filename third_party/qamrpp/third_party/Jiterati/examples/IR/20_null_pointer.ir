@@ -1,0 +1,3 @@
+terse module ir_null_pointer
+fn null_identity() -> ptr = null
+fn choose_ptr(flag: bool, p: ptr) -> ptr = (if flag p null)

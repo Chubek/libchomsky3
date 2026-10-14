@@ -1,0 +1,1 @@
+@emitln(`In REPL: print(expand("@emitln(&upper(hi))"))`)

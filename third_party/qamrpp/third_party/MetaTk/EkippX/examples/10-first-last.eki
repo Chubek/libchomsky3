@@ -1,0 +1,2 @@
+@emitln(&first(red, green, blue))
+@emitln(&last(red, green, blue))

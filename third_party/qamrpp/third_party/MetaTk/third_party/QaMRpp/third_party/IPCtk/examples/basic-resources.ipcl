@@ -1,0 +1,5 @@
+socket sock = tcp.listen("127.0.0.1:7000");
+queue q = mpmc.ring(64);
+mutex mx = semaphore("/basic.mx", 1);
+signal sig = eventfd();
+shared shared_buf = shm.open("/basic.buf", 4096);

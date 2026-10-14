@@ -1,0 +1,60 @@
+format CBOR
+category binary
+extensions .cbor
+mime application/cbor
+encoding binary
+adapter JSONAdapter
+
+identity {
+  canonical-name CBOR
+  description Concise Binary Object Representation mapped to serdetk::Document
+}
+
+model {
+  root any
+  object map
+  array sequence
+  scalar-types null boolean int uint string binary
+}
+
+binary-layout {
+  endian network
+  container-length inline
+  map-key-type string
+}
+
+parse {
+  input bytes
+  strategy major-type-dispatch
+  map policy object
+  array policy array
+  binary policy binary-value
+  malformed policy error
+}
+
+dump {
+  output bytes
+  strategy major-type-encode
+  map-key-order source
+}
+
+query {
+  engines API STKQ JQ SPARQL
+  default-engine API
+}
+
+validation {
+  standards JSON-Schema
+  mode via-json-adapter
+}
+
+conversion {
+  adapters JSONAdapter YAML.JSONAdapter XML.JSONAdapter BSON.JSONAdapter MessagePack.JSONAdapter
+  loss-reporting required
+  risks binary-carrier-loss
+}
+
+binarization {
+  source JSON YAML XML
+  entrypoint json::Binarize<cbor::JSONAdapter>
+}

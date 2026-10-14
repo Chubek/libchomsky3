@@ -1,0 +1,8 @@
+#!/bin/bash
+
+./parser_tests
+outs=tests/*.out
+for f in $outs ; do
+  n=${f%.*}
+  cp $f $n.check
+done

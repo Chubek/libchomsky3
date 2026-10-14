@@ -1,0 +1,15 @@
+[keywords]
+if else elseif while for function return local true false nil and or not break goto repeat until do then end in
+
+[operators]
++ - * / // % ^ # == ~= <= >= < > = .. . : & | ~ << >>
+
+[literals]
+number string boolean nil
+
+[delimiters]
+( ) [ ] { } , ;
+
+[comments]
+line=--
+block=--[[ ]] 

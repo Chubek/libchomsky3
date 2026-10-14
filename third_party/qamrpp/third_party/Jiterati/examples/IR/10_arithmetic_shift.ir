@@ -1,0 +1,3 @@
+terse module ir_arithmetic_shift_details
+fn halve_signed(x: i64) -> i64 = (a>> x 1)
+fn sign_mask(x: i64) -> i64 = (a>> x 63)

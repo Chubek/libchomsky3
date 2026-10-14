@@ -1,0 +1,73 @@
+format XML
+category textual
+extensions .xml
+mime application/xml text/xml
+encoding utf-8
+adapter JSONAdapter
+
+identity {
+  canonical-name XML
+  description XML document model projected into serdetk::Document
+}
+
+model {
+  root object
+  object key-type string
+  repeated-elements array
+  mixed-content policy text-node
+  attributes mapping "@name"
+  text-node mapping "#text"
+}
+
+lexical {
+  declaration support true
+  comments support true
+  cdata support true
+  processing-instructions support true
+  namespaces support lexical-only
+  name-rules xml-name
+  entity-escapes "&lt;" "&gt;" "&amp;" "&quot;" "&apos;"
+}
+
+parse {
+  strategy recursive-descent
+  elements nested true
+  attributes capture true
+  text capture true
+  whitespace-preserve configurable
+  close-tag validation strict
+  repeated-sibling policy array
+  self-closing support true
+}
+
+dump {
+  declaration emit optional
+  attributes from "@*"
+  text-node from "#text"
+  array policy repeated-elements
+  pretty default false
+  escape-entities true
+}
+
+query {
+  engines API STKQ SPARQL JQ
+  default-engine API
+  xml-path projected
+}
+
+validation {
+  standards JSON-Schema
+  mode via-json-adapter
+  future-standards XSD RelaxNG
+}
+
+conversion {
+  adapters JSONAdapter YAML.JSONAdapter BSON.JSONAdapter MessagePack.JSONAdapter
+  loss-reporting required
+  risks attribute-text-ambiguity ordering-loss namespace-loss
+}
+
+binarization {
+  via JSONAdapter
+  targets BSON MessagePack
+}

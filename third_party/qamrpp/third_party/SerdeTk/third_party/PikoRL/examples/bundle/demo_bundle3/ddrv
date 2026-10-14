@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+self="${DDRV_ARCHIVE:-$0}"
+cmd="${1:-}"; shift || true
+extract_trail() {
+  if [ -f ./.trail/index.json ]; then cat ./.trail/index.json; fi
+}
+case "$cmd" in
+  get)
+    mode="${1:-}"; shift || true
+    if [ "$mode" = "line" ]; then
+      n="${1:-1}"; f="${2:-}"; sed -n "${n}p" "$f"
+    fi
+    ;;
+  grep)
+    grep "$@"
+    ;;
+  fuzzydiff)
+    diff -u "$1" "$2" || true
+    ;;
+  trail-index)
+    extract_trail
+    ;;
+  *)
+    echo "Usage: ddrv {get line N FILE|grep ...|fuzzydiff A B|trail-index}" >&2
+    exit 1
+    ;;
+esac

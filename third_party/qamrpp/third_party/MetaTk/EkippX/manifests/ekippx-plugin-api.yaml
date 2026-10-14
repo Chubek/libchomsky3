@@ -1,0 +1,519 @@
+EkippXPluginAPI:
+  meta:
+    name: "EkippX Plugin API"
+    header: "EkippX-Plugin.hpp"
+    kind: "header-only-cpp-library"
+    status: "tightened-baseline"
+    version: "0.1"
+    namespace: "ekippx::plugin"
+    description: >
+      EkippX-Plugin.hpp defines the public plugin and extension API for EkippX. It provides host/plugin contracts for directives, functions, expanders, conditionals, atomics, hooks, metadata, capability negotiation, and optional dynamic loading support.
+
+    relationship:
+      host_library: "EkippX.hpp"
+      role: "extension and plugin integration layer"
+      style: "native C++ registration first, loadable plugin support optional"
+  language:
+    standard: "C++20"
+    exception_model: "exception-safe-host-boundary"
+    memory_model: "raii-and-value-semantics"
+    plugin_boundary:
+      preferred: "native C++ in-process registration"
+      optional: "shared-library-style dynamic plugins"
+  design_principles:
+    - "Header-only public extension surface"
+    - "Host-controlled plugin lifecycle"
+    - "Lambda-friendly registration API"
+    - "Capability-based negotiation instead of hard ABI rigidity"
+    - "Graceful coexistence of static and dynamic plugins"
+    - "EkippX runtime remains authoritative over semantics and execution"
+  dependencies:
+    - name: "EkippX.hpp"
+      role: "host runtime and registry surface"
+    - name: "STL"
+      role: "containers, strings, function objects, optional values, spans"
+    - name: "DSLtk.hpp"
+      role: "indirect parsing substrate through EkippX host only"
+  namespaces:
+    public:
+      - "ekippx::plugin"
+      - "ekippx::plugin::literals"
+      - "ekippx::plugin::capabilities"
+      - "ekippx::plugin::detail"
+    rules:
+      - "ekippx::plugin is the stable plugin-facing namespace"
+      - "ekippx::plugin::detail is internal and non-stable"
+  aliases:
+    - name: "String"
+      target: "std::string"
+    - name: "StringView"
+      target: "std::string_view"
+    - name: "Path"
+      target: "std::filesystem::path"
+    - name: "VersionString"
+      target: "std::string"
+    - name: "CapabilitySet"
+      target: "std::unordered_set<std::string>"
+    - name: "PropertyMap"
+      target: "std::unordered_map<std::string, ekippx::Value>"
+  enums:
+    - name: "PluginKind"
+      values:
+        - "static_plugin"
+        - "dynamic_plugin"
+        - "builtin_plugin"
+        - "meta_plugin"
+    - name: "PluginState"
+      values:
+        - "discovered"
+        - "registered"
+        - "loaded"
+        - "initialized"
+        - "active"
+        - "suspended"
+        - "unloaded"
+        - "failed"
+    - name: "CapabilityLevel"
+      values:
+        - "optional"
+        - "recommended"
+        - "required"
+    - name: "HookEvent"
+      values:
+        - "before_lex"
+        - "after_lex"
+        - "before_parse"
+        - "after_parse"
+        - "before_expand"
+        - "after_expand"
+        - "before_include"
+        - "after_include"
+        - "before_directive"
+        - "after_directive"
+        - "before_function"
+        - "after_function"
+        - "before_expander"
+        - "after_expander"
+        - "before_emit"
+        - "after_emit"
+        - "on_error"
+        - "on_warning"
+        - "on_reset"
+        - "on_freeze"
+        - "on_thaw"
+    - name: "AtomicKind"
+      values:
+        - "lexical"
+        - "runtime"
+        - "control"
+        - "output"
+        - "plugin_defined"
+    - name: "PluginLoadPolicy"
+      values:
+        - "manual"
+        - "autoload"
+        - "require_explicit"
+        - "disabled"
+    - name: "CompatibilityResult"
+      values:
+        - "compatible"
+        - "version_mismatch"
+        - "missing_capability"
+        - "host_rejected"
+        - "plugin_rejected"
+  exceptions:
+    - name: "PluginError"
+      base: "ekippx::Error"
+      description: "Base exception for plugin-related failures"
+    - name: "PluginLoadError"
+      base: "PluginError"
+    - name: "PluginInitError"
+      base: "PluginError"
+    - name: "PluginCapabilityError"
+      base: "PluginError"
+    - name: "PluginRegistrationError"
+      base: "PluginError"
+    - name: "HookError"
+      base: "PluginError"
+  structs:
+    - name: "Version"
+      fields:
+        - {name: "major", type: "std::uint32_t"}
+        - {name: "minor", type: "std::uint32_t"}
+        - {name: "patch", type: "std::uint32_t"}
+        - {name: "tag", type: "String"}
+    - name: "Capability"
+      fields:
+        - {name: "name", type: "String"}
+        - {name: "level", type: "CapabilityLevel"}
+        - {name: "description", type: "String"}
+    - name: "HostInfo"
+      fields:
+        - {name: "product_name", type: "String"}
+        - {name: "version", type: "Version"}
+        - {name: "api_version", type: "Version"}
+        - {name: "build_id", type: "String"}
+        - {name: "capabilities", type: "CapabilitySet"}
+    - name: "PluginInfo"
+      fields:
+        - {name: "name", type: "String"}
+        - {name: "display_name", type: "String"}
+        - {name: "description", type: "String"}
+        - {name: "author", type: "String"}
+        - {name: "license", type: "String"}
+        - {name: "version", type: "Version"}
+        - {name: "api_version", type: "Version"}
+        - {name: "kind", type: "PluginKind"}
+        - {name: "homepage", type: "String"}
+        - {name: "tags", type: "std::vector<String>"}
+    - name: "PluginDependency"
+      fields:
+        - {name: "name", type: "String"}
+        - {name: "version_constraint", type: "String"}
+        - {name: "optional", type: "bool", default: false}
+    - name: "CompatibilityReport"
+      fields:
+        - {name: "result", type: "CompatibilityResult"}
+        - {name: "message", type: "String"}
+        - {name: "missing_capabilities", type: "std::vector<String>"}
+    - name: "PluginDescriptor"
+      fields:
+        - {name: "info", type: "PluginInfo"}
+        - {name: "dependencies", type: "std::vector<PluginDependency>"}
+        - {name: "required_capabilities", type: "std::vector<Capability>"}
+        - {name: "optional_capabilities", type: "std::vector<Capability>"}
+        - {name: "properties", type: "PropertyMap"}
+    - name: "AtomicSpec"
+      fields:
+        - {name: "name", type: "String"}
+        - {name: "kind", type: "AtomicKind"}
+        - {name: "description", type: "String"}
+        - {name: "consumes_newline", type: "bool", default: false}
+        - {name: "requires_runtime", type: "bool", default: true}
+    - name: "HookSpec"
+      fields:
+        - {name: "event", type: "HookEvent"}
+        - {name: "priority", type: "int", default: 0}
+        - {name: "label", type: "String"}
+    - name: "PluginContext"
+      description: >
+        Narrow plugin-facing context wrapper exposing safe host operations without requiring plugins to manipulate all internal runtime state directly.
+
+      fields:
+        - {name: "host_info", type: "HostInfo"}
+        - {name: "plugin_name", type: "String"}
+    - name: "PluginLoadRequest"
+      fields:
+        - {name: "path", type: "Path"}
+        - {name: "policy", type: "PluginLoadPolicy", default: "manual"}
+        - {name: "config", type: "PropertyMap"}
+    - name: "PluginLoadResult"
+      fields:
+        - {name: "success", type: "bool"}
+        - {name: "descriptor", type: "std::optional<PluginDescriptor>"}
+        - {name: "message", type: "String"}
+  callback_types:
+    - name: "PluginInitFn"
+      signature: >
+        std::function<void(class Registrar&, PluginContext&)>
+
+      notes:
+        - "Called when the plugin is initialized and should register its contributions"
+    - name: "PluginShutdownFn"
+      signature: >
+        std::function<void(PluginContext&)>
+
+      notes:
+        - "Called before plugin unload or host teardown"
+    - name: "AtomicHandler"
+      signature: >
+        std::function<void(ekippx::Context&, StringView)>
+
+      notes:
+        - "Handles plugin-defined atomics such as brk/unbrk-like controls"
+    - name: "HookHandler"
+      signature: >
+        std::function<void(ekippx::Context&, HookEvent)>
+
+      notes:
+        - "Lifecycle interception point for runtime events"
+    - name: "CompatibilityFn"
+      signature: >
+        std::function<CompatibilityReport(const HostInfo&)>
+
+      notes:
+        - "Lets the plugin validate host compatibility before full activation"
+  classes:
+    - name: "Registrar"
+      role: "Primary plugin registration gateway into EkippX"
+      methods:
+        - "ekippx::Context& host()"
+        - "PluginContext& plugin_context()"
+        - "void register_directive(ekippx::DirectiveSpec spec, ekippx::DirectiveHandler handler)"
+        - "void register_function(ekippx::FunctionSpec spec, ekippx::FunctionHandler handler)"
+        - "void register_expander(ekippx::ExpanderSpec spec, ekippx::ExpanderHandler handler)"
+        - "void register_conditional(ekippx::ConditionalSpec spec, ekippx::ConditionalHandler handler)"
+        - "void register_atomic(AtomicSpec spec, AtomicHandler handler)"
+        - "void register_hook(HookSpec spec, HookHandler handler)"
+        - "void define_macro(StringView name, StringView body)"
+        - "void define_lambda_macro(StringView name, ekippx::MacroLambda fn)"
+        - "void set_metadata(StringView key, const ekippx::Value& value)"
+        - "void require_capability(StringView capability_name)"
+        - "void export_symbol(StringView name, StringView value)"
+    - name: "Plugin"
+      role: "Base class for object-style plugins"
+      lifecycle:
+        - "discover"
+        - "check_compatibility"
+        - "initialize"
+        - "activate"
+        - "shutdown"
+      methods:
+        - "virtual ~Plugin() = default"
+        - "virtual PluginDescriptor descriptor() const = 0"
+        - "virtual CompatibilityReport check_compatibility(const HostInfo& host) const"
+        - "virtual void initialize(Registrar& registrar, PluginContext& ctx) = 0"
+        - "virtual void shutdown(PluginContext& ctx)"
+      notes:
+        - "Alternative to pure function-style plugin entry points"
+        - "Useful for stateful plugins"
+    - name: "StaticPlugin"
+      role: "Convenience holder for statically linked plugin definitions"
+      fields:
+        - {name: "descriptor", type: "PluginDescriptor"}
+        - {name: "compatibility", type: "std::optional<CompatibilityFn>"}
+        - {name: "initialize", type: "PluginInitFn"}
+        - {name: "shutdown", type: "std::optional<PluginShutdownFn>"}
+    - name: "PluginManager"
+      role: "Host-side registry and lifecycle manager for plugins"
+      methods:
+        - "void register_static(StaticPlugin plugin)"
+        - "void register_object(std::shared_ptr<Plugin> plugin)"
+        - "PluginLoadResult load(const PluginLoadRequest& request)"
+        - "void unload(StringView name)"
+        - "bool is_loaded(StringView name) const"
+        - "PluginState state_of(StringView name) const"
+        - "std::vector<String> loaded_plugins() const"
+        - "const PluginDescriptor* descriptor_of(StringView name) const"
+        - "CompatibilityReport check_compatibility(const PluginDescriptor& desc) const"
+        - "void add_search_path(const Path& path)"
+        - "void clear_search_paths()"
+        - "void set_load_policy(PluginLoadPolicy policy)"
+        - "PluginLoadPolicy load_policy() const"
+    - name: "AtomicRegistry"
+      role: "Registry for plugin-provided atomics"
+      methods:
+        - "void register_atomic(AtomicSpec spec, AtomicHandler handler)"
+        - "void unregister_atomic(StringView name)"
+        - "bool contains(StringView name) const"
+        - "const AtomicSpec* find(StringView name) const"
+        - "std::vector<String> names() const"
+    - name: "HookRegistry"
+      role: "Registry for plugin and host hook handlers"
+      methods:
+        - "void register_hook(HookSpec spec, HookHandler handler)"
+        - "void unregister_hooks(HookEvent event, StringView label = {})"
+        - "bool has_hooks(HookEvent event) const"
+        - "std::size_t count(HookEvent event) const"
+  free_functions:
+    - name: "host_info"
+      signature: "HostInfo host_info(const ekippx::Context& ctx)"
+    - name: "make_plugin_context"
+      signature: "PluginContext make_plugin_context(const HostInfo& host, StringView plugin_name)"
+    - name: "make_static_plugin"
+      signature: >
+        StaticPlugin make_static_plugin(
+
+          PluginDescriptor descriptor,
+          PluginInitFn initialize,
+          std::optional<PluginShutdownFn> shutdown = std::nullopt
+        )"
+
+    - name: "check_plugin_compatibility"
+      signature: >
+        CompatibilityReport check_plugin_compatibility(
+
+          const PluginDescriptor& descriptor,
+          const HostInfo& host
+        )"
+
+  host_plugin_contract:
+    required_host_services:
+      - "directive registration"
+      - "function registration"
+      - "expander registration"
+      - "conditional registration"
+      - "macro registration"
+      - "diagnostic emission"
+      - "safe runtime access through Context or PluginContext"
+    plugin_rights:
+      - "register custom directives"
+      - "register custom functions"
+      - "register custom expanders"
+      - "register custom conditionals"
+      - "register custom atomics"
+      - "attach hooks to runtime events"
+      - "publish metadata and capabilities"
+    plugin_limits:
+      - "Plugins do not own the host execution loop"
+      - "Plugins do not bypass configured security or shell policies"
+      - "Plugins should not assume direct access to internal DSLtk parser state"
+      - "Plugins should tolerate partial capability availability"
+  standard_capabilities:
+    - name: "core.directives"
+      level: "required"
+      description: "Can register directives"
+    - name: "core.functions"
+      level: "required"
+      description: "Can register functions"
+    - name: "core.expanders"
+      level: "required"
+      description: "Can register expanders"
+    - name: "core.conditionals"
+      level: "recommended"
+      description: "Can register conditionals"
+    - name: "core.atomics"
+      level: "optional"
+      description: "Can register atomics"
+    - name: "runtime.hooks"
+      level: "recommended"
+      description: "Can register lifecycle hooks"
+    - name: "io.filesystem"
+      level: "optional"
+      description: "Can interact with host filesystem APIs"
+    - name: "runtime.shell"
+      level: "optional"
+      description: "Shell-backed behavior is permitted if host policy allows it"
+    - name: "runtime.plugins.dynamic"
+      level: "optional"
+      description: "Dynamic loading of plugins is supported"
+  standard_plugin_patterns:
+    - name: "static_lambda_plugin"
+      description: "Preferred path for embedders"
+      shape:
+        - "Build PluginDescriptor"
+        - "Create StaticPlugin with lambda initializer"
+        - "Register through PluginManager::register_static"
+    - name: "object_plugin"
+      description: "Stateful plugin via inheritance"
+      shape:
+        - "Derive from Plugin"
+        - "Override descriptor() and initialize()"
+        - "Register shared_ptr<Plugin> with PluginManager"
+    - name: "dynamic_plugin"
+      description: "Optional shared library style"
+      shape:
+        - "Export a well-known creation entry point"
+        - "Host validates descriptor and capabilities"
+        - "Host invokes initialize through managed PluginContext"
+  suggested_dynamic_entry_points:
+    notes:
+      - "These names are conventions, not mandatory if host uses custom loading glue"
+    symbols:
+      - name: "ekippx_plugin_descriptor"
+        returns: "PluginDescriptor"
+      - name: "ekippx_plugin_check_compatibility"
+        returns: "CompatibilityReport"
+      - name: "ekippx_plugin_initialize"
+        returns: "void"
+      - name: "ekippx_plugin_shutdown"
+        returns: "void"
+  standard_builtins_expected_from_plugins:
+    atomics:
+      examples:
+        - "brk"
+        - "unbrk"
+      note: "These may be implemented as builtins or plugins depending on host configuration"
+    hook_use_cases:
+      - "trace injection"
+      - "profiling spans"
+      - "diagnostic augmentation"
+      - "include auditing"
+      - "output interception"
+  security_model:
+    principles:
+      - "Host remains authoritative"
+      - "Plugins operate under active runtime policies"
+      - "Dynamic loading may be disabled entirely"
+      - "Plugin capabilities are declarative and checkable"
+    constraints:
+      - "Filesystem access is mediated through host APIs when possible"
+      - "Shell access is subject to EkippX shell policy"
+      - "Hook ordering is deterministic by priority then registration order"
+  extension_examples:
+    - name: "register_atomic_plugin"
+      code: |
+        ekippx::plugin::StaticPlugin plugin = ekippx::plugin::make_static_plugin(
+          {
+            .info = {
+              .name = "control-flow",
+              .display_name = "Control Flow Helpers",
+              .description = "Provides atomic controls",
+              .author = "EkippX",
+              .license = "MIT",
+              .version = {0, 1, 0, ""},
+              .api_version = {0, 1, 0, ""},
+              .kind = ekippx::plugin::PluginKind::static_plugin
+            }
+          },
+          [](ekippx::plugin::Registrar& reg, ekippx::plugin::PluginContext&) {
+            reg.register_atomic(
+              {.name = "brk", .kind = ekippx::plugin::AtomicKind::control, .consumes_newline = true},
+              [](ekippx::Context& ctx, std::string_view) {
+                ctx.emit("");
+              }
+            );
+          }
+        );
+    - name: "register_function_plugin"
+      code: |
+        ekippx::plugin::StaticPlugin plugin = ekippx::plugin::make_static_plugin(
+          {
+            .info = {
+              .name = "text-extra",
+              .display_name = "Text Extras",
+              .description = "Extra string helpers",
+              .author = "EkippX",
+              .license = "MIT",
+              .version = {0, 1, 0, ""},
+              .api_version = {0, 1, 0, ""},
+              .kind = ekippx::plugin::PluginKind::static_plugin
+            }
+          },
+          [](ekippx::plugin::Registrar& reg, ekippx::plugin::PluginContext&) {
+            reg.register_function(
+              {.name = "reverseText", .min_arity = 1, .max_arity = 1, .pure = true},
+              [](ekippx::Context&, const ekippx::Invocation& inv) -> std::string {
+                std::string s = inv.args.at(0);
+                std::reverse(s.begin(), s.end());
+                return s;
+              }
+            );
+          }
+        );
+  compatibility:
+    relation_to_ekippx:
+      - "EkippX-Plugin.hpp extends EkippX.hpp and depends on its public runtime abstractions"
+      - "Plugin APIs should remain thinner than the full host internals"
+      - "The host may expose more through Registrar over time without breaking basic plugin models"
+    source_compatibility:
+      guaranteed: false
+    abi_compatibility:
+      guaranteed: false
+      note: "Capability and version negotiation are preferred over hard ABI assumptions"
+  file_layout_expectations:
+    primary_header: "EkippX-Plugin.hpp"
+    companion_header:
+      - "EkippX.hpp"
+    optional_internal_headers:
+      - "EkippX/plugin/*.hpp"
+      - "EkippX/detail/*.hpp"
+    guarantee:
+      - "Including EkippX-Plugin.hpp is sufficient for public plugin API use"
+  notes:
+    - "Pass 1 focuses on static registration and host-managed lifecycle primitives."
+    - "This manifest intentionally models only EkippX-Plugin.hpp."
+    - "The plugin API is C++-native first, not a C ABI plugin system."
+    - "Dynamic loading support is optional and host-governed."
+    - "Lambda registration is treated as a first-class extension mechanism."
+    - "Plugin-defined atomics such as brk/unbrk fit naturally in this API."

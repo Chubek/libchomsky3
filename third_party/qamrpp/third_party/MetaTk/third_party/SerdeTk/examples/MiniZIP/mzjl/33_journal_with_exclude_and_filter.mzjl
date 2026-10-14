@@ -1,0 +1,8 @@
+%MZJL-v1.0.0
+
+archive "journal-deferred-features.mz"
+source "docs" recursive
+exclude "*.tmp"
+exclude "*.bak"
+filter aes256
+save_to "dist"

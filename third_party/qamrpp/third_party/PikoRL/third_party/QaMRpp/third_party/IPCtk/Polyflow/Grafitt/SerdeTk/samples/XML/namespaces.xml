@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root
+  xmlns="http://example.org/default"
+  xmlns:cfg="http://example.org/config"
+  xmlns:net="http://example.org/network">
+
+  <cfg:settings>
+    <cfg:entry key="threads" type="integer">16</cfg:entry>
+    <cfg:entry key="debug" type="boolean">false</cfg:entry>
+  </cfg:settings>
+
+  <net:interfaces>
+    <net:interface name="eth0">
+      <net:ipv4>192.168.1.20</net:ipv4>
+      <net:mac>AA:BB:CC:DD:EE:FF</net:mac>
+    </net:interface>
+  </net:interfaces>
+
+</root>

@@ -1,0 +1,65 @@
+version: 1
+formats:
+  - id: JSON
+    specification: textual/JSON.sktl
+    category: textual
+    extensions: [.json]
+    mime_types: [application/json]
+    schema_required: false
+    schema_languages: [JSON-Schema]
+    package_compatible: true
+    plugins: []
+  - id: YAML
+    specification: textual/YAML.sktl
+    category: textual
+    extensions: [.yaml, .yml]
+    mime_types: [application/yaml, text/yaml]
+    schema_required: false
+    schema_languages: [JSON-Schema]
+    package_compatible: true
+    plugins: []
+  - id: XML
+    specification: textual/XML.sktl
+    category: textual
+    extensions: [.xml]
+    mime_types: [application/xml, text/xml]
+    schema_required: false
+    schema_languages: [JSON-Schema, XSD, RelaxNG]
+    package_compatible: true
+    plugins: []
+  - id: S-Expr
+    specification: textual/S-Expr.sktl
+    category: textual
+    extensions: [.sexpr, .scm, .lisp]
+    mime_types: [text/x-s-expression]
+    schema_required: false
+    schema_languages: [JSON-Schema]
+    package_compatible: true
+    plugins: []
+  - id: BSON
+    specification: binary/BSON.sktl
+    category: binary
+    extensions: [.bson]
+    mime_types: [application/bson]
+    schema_required: false
+    schema_languages: [JSON-Schema]
+    package_compatible: true
+    plugins: []
+  - id: CBOR
+    specification: binary/CBOR.sktl
+    category: binary
+    extensions: [.cbor]
+    mime_types: [application/cbor]
+    schema_required: false
+    schema_languages: [JSON-Schema]
+    package_compatible: true
+    plugins: []
+  - id: MessagePack
+    specification: binary/MessagePack.sktl
+    category: binary
+    extensions: [.msgpack, .mpack]
+    mime_types: [application/msgpack]
+    schema_required: false
+    schema_languages: [JSON-Schema]
+    package_compatible: true
+    plugins: []

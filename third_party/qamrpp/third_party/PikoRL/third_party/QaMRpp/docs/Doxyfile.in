@@ -1,0 +1,61 @@
+# Doxyfile for QaMRpp API/docs generation
+# Generated from CMake (docs/Doxyfile.in)
+
+PROJECT_NAME           = "QaMRpp"
+PROJECT_BRIEF          = "QaMRpp language runtime, standard library, plugins, and podlet tooling"
+PROJECT_NUMBER         = @PROJECT_VERSION@
+OUTPUT_DIRECTORY      = @DOXYGEN_OUTPUT_DIR@
+OUTPUT_LANGUAGE       = English
+
+# Input
+INPUT                  = \
+  @PROJECT_SOURCE_DIR@/include \
+  @PROJECT_SOURCE_DIR@/lib \
+  @PROJECT_SOURCE_DIR@/plugins \
+  @PROJECT_SOURCE_DIR@/stdlib \
+  @PROJECT_SOURCE_DIR@/stdlib++ \
+  @PROJECT_SOURCE_DIR@/cli \
+  @PROJECT_SOURCE_DIR@/podlet \
+  @PROJECT_SOURCE_DIR@/docs/FrontPage.md \
+  @PROJECT_SOURCE_DIR@/docs/manual
+RECURSIVE              = YES
+FILE_PATTERNS          = *.h *.hpp *.md
+EXCLUDE_PATTERNS       = */build/* */.git/*
+
+# Markdown / docs-as-code
+MARKDOWN_SUPPORT       = YES
+MARKDOWN_ID_STYLE      = DOXYGEN
+TOC_INCLUDE_HEADINGS   = 1
+USE_MDFILE_AS_MAINPAGE = @PROJECT_SOURCE_DIR@/docs/FrontPage.md
+
+# What to extract
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = NO
+EXTRACT_LOCAL_METHODS  = YES
+
+# Use C++11 parsing + headers
+EXTENSION_MAPPING      = hpp=C++
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = NO
+OPTIMIZE_OUTPUT_FOR_C  = NO
+OPTIMIZE_OUTPUT_JAVA   = NO
+OPTIMIZE_FOR_FORTRAN   = NO
+
+# Outputs
+GENERATE_HTML          = YES
+GENERATE_TREEVIEW      = YES
+HTML_OUTPUT            = html
+
+GENERATE_LATEX         = YES
+LATEX_OUTPUT           = latex
+LATEX_BATCHMODE        = YES
+
+# Keep behavior deterministic for CI
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = NO
+WARN_AS_ERROR          = NO
+
+# Keep paths readable
+FULL_PATH_NAMES        = NO
+STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@

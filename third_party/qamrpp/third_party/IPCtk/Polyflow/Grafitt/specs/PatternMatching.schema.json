@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grafitt.dev/schemas/pattern-matching.schema.json",
+  "title": "Grafitt Pattern Matching Rule",
+  "type": "object",
+  "required": ["version", "match", "replacement"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "match": { "$ref": "#/$defs/matchClause" },
+    "binds": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/bindClause" },
+      "default": []
+    },
+    "predicates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/predicateClause" },
+      "default": []
+    },
+    "replacement": { "$ref": "#/$defs/replacementClause" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "matchClause": {
+      "type": "object",
+      "required": ["kind", "pattern"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["pattern", "path", "edge"] },
+        "pattern": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "bindClause": {
+      "type": "object",
+      "required": ["name", "expr"],
+      "properties": {
+        "name": { "type": "string" },
+        "expr": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "predicateClause": {
+      "type": "object",
+      "required": ["expr"],
+      "properties": {
+        "expr": { "type": "string" },
+        "phase": { "type": "string", "enum": ["pre", "post"] }
+      },
+      "additionalProperties": true
+    },
+    "replacementClause": {
+      "type": "object",
+      "required": ["actions"],
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["op"],
+            "properties": {
+              "op": { "type": "string" },
+              "args": { "type": "object" }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

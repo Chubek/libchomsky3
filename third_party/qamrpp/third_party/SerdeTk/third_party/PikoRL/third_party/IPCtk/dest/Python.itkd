@@ -1,0 +1,8 @@
+target python
+capability reqrep
+capability pubsub
+import asyncio
+import dataclasses
+map string -> str
+map bytes -> bytes
+rule emit_channel = template("async def send(channel, payload):\n    await channel.send(payload)\n")

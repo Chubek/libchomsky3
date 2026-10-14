@@ -1,0 +1,62 @@
+format GBIN
+category binary
+extensions .gbin
+mime application/x-grafitt-binary
+encoding binary
+adapter JSONAdapter
+
+identity {
+  canonical-name "Grafitt Binary Graph Format"
+  description "Binary storage format for Grafitt graphs, query metadata, and rewrite payloads."
+  magic "GBIN"
+  version 1
+}
+
+model {
+  root object
+  object map
+  array sequence
+  scalar-types null boolean int uint double string binary
+}
+
+binary-layout {
+  endian little
+  document-length prefix-int32
+  cstring-keys true
+  type-tag per-field
+}
+
+parse {
+  input bytes
+  strategy length-delimited-recursive
+  root-requirement object
+  duplicate-keys policy last-wins
+  unsupported-types policy best-effort-string
+}
+
+dump {
+  output bytes
+  root-object required
+  canonical-field-order source
+  numeric narrowing checked
+}
+
+query {
+  engines json-pointer jsonpath
+}
+
+validation {
+  standard structural
+  mode permissive
+}
+
+conversion {
+  adapters JSONAdapter
+  loss-reporting enabled
+  risks stringification-of-custom-cpp-types
+}
+
+binarization {
+  sources adapter-model binary-layout parse dump
+  entrypoint root
+}

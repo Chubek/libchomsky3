@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://klyspec.dev/schemas/CLIManifest.schema.json",
+  "title": "CLIManifest",
+  "description": "Schema for a Klyspec CLI manifest. Manifests are expressed in YAML and parsed via yaml-cpp; this JSON Schema describes the data model consumed by the generator and the bootstrapped klyspec CLI.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["program"],
+  "properties": {
+    "program": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The program/command name this CLI manifest describes."
+    },
+    "version": {
+      "type": "string",
+      "default": "0.1.0",
+      "description": "Semantic version string emitted by generated CLIs."
+    },
+    "about": {
+      "type": "string",
+      "description": "Short human-readable description of the program."
+    },
+    "arguments": {
+      "type": "array",
+      "description": "Top-level options/flags/positionals for the program.",
+      "items": { "$ref": "#/$defs/argument" }
+    },
+    "commands": {
+      "type": "array",
+      "description": "Subcommands declared by the program.",
+      "items": { "$ref": "#/$defs/command" }
+    }
+  },
+  "$defs": {
+    "argument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable identifier used as the parsed-values key."
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["flag", "option", "positional", "variadic"],
+          "default": "option",
+          "description": "Argument category understood by the generator."
+        },
+        "names": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Flag/option spellings, e.g. [\"-v\", \"--verbose\"]."
+        },
+        "help": {
+          "type": "string",
+          "description": "Human-readable help text for the argument."
+        },
+        "default": {
+          "description": "Default value applied when the argument is absent. Coerced to a string."
+        },
+        "required": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the argument must be supplied."
+        }
+      }
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Subcommand name."
+        },
+        "help": {
+          "type": "string",
+          "description": "Short description of the subcommand."
+        },
+        "arguments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/argument" },
+          "description": "Arguments specific to this subcommand."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,251 @@
+# =========================================================
+# Python + C++ Hybrid Library .gitignore
+# =========================================================
+
+# ---------------------------------------------------------
+# Python
+# ---------------------------------------------------------
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+share/python-wheels/
+wheels/
+pip-wheel-metadata/
+
+*.egg-info/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Type checking
+.mypy_cache/
+.pyre/
+.pytype/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Ruff / linting
+.ruff_cache/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Coverage
+coverage.xml
+*.cover
+
+# ---------------------------------------------------------
+# C / C++
+# ---------------------------------------------------------
+
+# Object files
+*.o
+*.obj
+*.lo
+*.slo
+
+# Libraries
+*.a
+*.la
+*.lib
+
+# Shared libraries
+*.so
+*.dylib
+*.dll
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Debug symbols
+*.pdb
+*.dSYM/
+
+# Dependency files
+*.d
+
+# Compilation databases
+compile_commands.json
+
+# ---------------------------------------------------------
+# CMake
+# ---------------------------------------------------------
+
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CTestTestfile.cmake
+Testing/
+
+# Build directories
+build*/
+_build/
+out/
+
+# Ninja
+.ninja_deps
+.ninja_log
+
+# ---------------------------------------------------------
+# Meson
+# ---------------------------------------------------------
+
+meson-private/
+meson-logs/
+meson-info/
+
+# ---------------------------------------------------------
+# Autotools
+# ---------------------------------------------------------
+
+autom4te.cache/
+aclocal.m4
+configure
+config.log
+config.status
+libtool
+m4/
+
+# ---------------------------------------------------------
+# LLVM / Clang
+# ---------------------------------------------------------
+
+*.bc
+*.ll
+
+# ---------------------------------------------------------
+# SWIG / pybind11 / Cython
+# ---------------------------------------------------------
+
+*.pyd
+*.pyx.c
+*.cpp.swp
+
+# ---------------------------------------------------------
+# Editors / IDEs
+# ---------------------------------------------------------
+
+# VSCode
+.vscode/
+
+# CLion / IntelliJ
+.idea/
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+\#*\#
+.\#*
+
+# ---------------------------------------------------------
+# OS files
+# ---------------------------------------------------------
+
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------
+# Logs
+# ---------------------------------------------------------
+
+*.log
+
+# ---------------------------------------------------------
+# Temporary
+# ---------------------------------------------------------
+
+tmp/
+temp/
+
+# ---------------------------------------------------------
+# Profiling
+# ---------------------------------------------------------
+
+gmon.out
+perf.data*
+callgrind.out.*
+
+# ---------------------------------------------------------
+# Cache
+# ---------------------------------------------------------
+
+.cache/
+
+# ---------------------------------------------------------
+# Generated bindings
+# ---------------------------------------------------------
+
+generated/
+bindings/generated/
+
+# ---------------------------------------------------------
+# Documentation build artifacts
+# ---------------------------------------------------------
+
+docs/_build/
+site/
+
+# ---------------------------------------------------------
+# Local configuration
+# ---------------------------------------------------------
+
+.local/
+.env
+.env.*
+
+# ---------------------------------------------------------
+# Bazel
+# ---------------------------------------------------------
+
+bazel-*
+
+*.yaml
+*.json
+*.xml
+
+AGENTS.md
+html
+latex
+xml
+docbook
+def
+markdown
+
+*.diff

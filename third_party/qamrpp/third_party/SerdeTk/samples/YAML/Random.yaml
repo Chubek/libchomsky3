@@ -1,0 +1,11 @@
+widgets:
+  buzz:
+    - RedBuzz:
+        isSilly: true
+    - Blue Buzz:
+        isSilly: false
+
+  foobaz:
+    - Abracadabra:
+        rating: 3000
+        specialty: Such YAML much amaze

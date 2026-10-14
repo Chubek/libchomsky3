@@ -1,0 +1,9 @@
+%MZJL-v1.0.0
+
+archive "journal-manifest.mz"
+source "README.md"
+manifest INIManifest
+manifest_cmd ".section package"
+manifest_cmd ".kv name MiniZIP"
+manifest_cmd ".kv source mzjl"
+save_to "dist"

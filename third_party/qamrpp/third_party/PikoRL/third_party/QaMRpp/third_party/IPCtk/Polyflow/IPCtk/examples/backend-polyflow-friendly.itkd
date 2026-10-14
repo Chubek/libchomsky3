@@ -1,0 +1,22 @@
+target cpp
+capability socket
+capability pubsub
+capability sync
+capability signal
+capability codec
+
+rule recv = """
+monitor.emit("sched.recv.start", "${arg0}");
+ipc.recv(${arg0});
+monitor.emit("sched.recv.done", "${arg0}");
+"""
+
+rule send = ipc.send(${arg0});
+rule enqueue = ipc.enqueue(${arg0});
+rule dequeue = ipc.dequeue(${arg0});
+rule lock = ipc.lock(${arg0});
+rule unlock = ipc.unlock(${arg0});
+rule notify = ipc.notify(${arg0});
+rule wait = ipc.wait(${arg0});
+rule decode = ipc.decode(${arg0});
+rule encode = ipc.encode(${arg0});

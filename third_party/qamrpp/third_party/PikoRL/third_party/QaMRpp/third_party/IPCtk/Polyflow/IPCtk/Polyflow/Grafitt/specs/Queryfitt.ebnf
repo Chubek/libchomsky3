@@ -1,0 +1,23 @@
+(* Queryfitt textual DSL: minimal structural grammar for the first parser slice. *)
+
+query           = ws, statement, ws ;
+
+statement       = pattern_stmt
+                | traversal_stmt
+                | path_stmt
+                | reachability_stmt
+                | aggregation_stmt ;
+
+pattern_stmt    = "find", ws1, "pattern", ws1, ident ;
+traversal_stmt  = "traverse", ws1, "from", ws1, ident, [ws1, "depth", ws1, uint] ;
+path_stmt       = "path", ws1, ident, ws1, "->", ws1, ident ;
+reachability_stmt = "reachable", ws1, ident, ws1, "->", ws1, ident, [ws1, "maxdepth", ws1, uint] ;
+aggregation_stmt = "aggregate", ws1, ident, ws1, "on", ws1, ident ;
+
+ident           = alpha, { alpha | digit | "_" | "-" } ;
+uint            = digit, { digit } ;
+alpha           = "A".."Z" | "a".."z" ;
+digit           = "0".."9" ;
+
+ws              = { " " | "\t" | "\n" | "\r" } ;
+ws1             = (" " | "\t" | "\n" | "\r"), ws ;

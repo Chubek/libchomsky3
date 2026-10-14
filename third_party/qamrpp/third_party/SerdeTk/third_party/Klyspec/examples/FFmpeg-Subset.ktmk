@@ -1,0 +1,143 @@
+command "ffmpeg-subset"
+{
+    help-string
+    {
+        Focused FFmpeg orchestration profile for simple transcode pipelines
+    };
+
+    param "y/overwrite"
+    {
+        help-string
+        {
+            Overwrite output files without prompting
+        };
+    };
+
+    param "hide_banner"
+    {
+        help-string
+        {
+            Hide startup banner
+        };
+    };
+
+    param "loglevel="
+    {
+        option = true;
+        default = "info";
+        help-string
+        {
+            Log level: quiet panic fatal error warning info verbose debug trace
+        };
+    };
+
+    param "i/input="
+    {
+        help-string
+        {
+            Input source; repeat for multiple inputs
+        };
+        repeatable = true;
+        required = true;
+    };
+
+    param "map="
+    {
+        option = true;
+        repeatable = true;
+        help-string
+        {
+            Stream map rules
+        };
+    };
+
+    param "c:v/video-codec="
+    {
+        help-string
+        {
+            Video codec (copy, libx264, libx265)
+        };
+        default = "libx264";
+    };
+
+    param "c:a/audio-codec="
+    {
+        help-string
+        {
+            Audio codec (copy, aac, opus)
+        };
+        default = "aac";
+    };
+
+    param "b:v/video-bitrate="
+    {
+        help-string
+        {
+            Video bitrate like 4M
+        };
+        default = "4M";
+    };
+
+    param "b:a/audio-bitrate="
+    {
+        help-string
+        {
+            Audio bitrate like 192k
+        };
+        default = "192k";
+    };
+
+    param "vf/filter-video="
+    {
+        help-string
+        {
+            Video filter expression
+        };
+        repeatable = true;
+    };
+
+    param "af/filter-audio="
+    {
+        help-string
+        {
+            Audio filter expression
+        };
+        repeatable = true;
+    };
+
+    param "movflags="
+    {
+        option = true;
+        repeatable = true;
+        help-string
+        {
+            MP4 flags like +faststart
+        };
+    };
+
+    param "threads="
+    {
+        option = true;
+        default = "0";
+        help-string
+        {
+            Worker threads, 0 for auto
+        };
+    };
+
+    param "output"
+    {
+        positional = true;
+        required = true;
+        help-string
+        {
+            Output file path
+        };
+    };
+};
+
+pre-evaluate
+{
+    exec = "/usr/bin/ffmpeg";
+    sanitize = "stdlib/shell.sh";
+};

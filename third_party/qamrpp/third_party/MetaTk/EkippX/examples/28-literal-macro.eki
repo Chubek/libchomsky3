@@ -1,0 +1,2 @@
+@deflit(NAME, `$1 is not expanded`)
+@emitln(&NAME(world))

@@ -1,0 +1,1 @@
+@emitln($RANDOM{1,10})

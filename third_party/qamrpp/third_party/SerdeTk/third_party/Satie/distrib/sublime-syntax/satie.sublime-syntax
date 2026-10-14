@@ -1,0 +1,27 @@
+%YAML 1.2
+---
+# Sublime Text syntax definition for the Satie DSL / DIMACS.
+name: Satie
+file_extensions: [satie, sat, cnf]
+scope: source.satie
+
+contexts:
+  main:
+    - match: '^c\b.*$'
+      scope: comment.line.satie
+    - match: '#.*$'
+      scope: comment.line.satie
+    - match: '\b(p)\b'
+      scope: keyword.control.satie
+    - match: '[~!]'
+      scope: keyword.operator.negate.satie
+    - match: '[&|]'
+      scope: keyword.operator.satie
+    - match: '[()]'
+      scope: punctuation.section.parens.satie
+    - match: '\b0\b'
+      scope: constant.numeric.satie
+    - match: '[0-9]+'
+      scope: constant.numeric.satie
+    - match: '[A-Za-z_][A-Za-z0-9_]*'
+      scope: variable.satie

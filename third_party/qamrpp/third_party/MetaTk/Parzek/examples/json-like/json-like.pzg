@@ -1,0 +1,10 @@
+@parser:name(JsonLike)
+@parser:start(object)
+WS: [ \t\r\n]+ -> @IGNORE;
+LBRACE: "{";
+RBRACE: "}";
+COLON: ":";
+COMMA: ",";
+STRING: [a-zA-Z0-9_]+;
+pair: STRING ~ COLON ~ STRING;
+object: LBRACE ~ pair (COMMA ~ pair)* ~ RBRACE;

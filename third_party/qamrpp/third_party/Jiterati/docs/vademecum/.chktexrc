@@ -1,0 +1,37 @@
+# .chktexrc — local chktex configuration for "Jiterati: A Vademecum"
+#
+# Why this file exists
+# --------------------
+# chktex looks for a global resource file and prints
+#   "chktex: WARNING -- Could not find global resource file."
+# when none is found. The presence of a *local* .chktexrc in the working
+# directory (even a comment-only one) satisfies that lookup, so
+#   chktex Jiterati-Vademcum.tex
+# runs cleanly. This file additionally tunes chktex for the genre.
+#
+# Syntax note
+# -----------
+# chktexrc directives use `Key Value` (or `Key=Value`). Command-line
+# style flags are passed via the `CmdLine { ... }` directive, which is
+# appended to the real command line. Warning numbers are muted with
+# `-n <num>`. See `chktex -h` for the full option list.
+
+# --- Genre tuning -----------------------------------------------------------
+# This is a technical textbook: heavy on verbatim code, mathematics,
+# identifiers set in monospace, command names ending with punctuation,
+# and inline snippets. A handful of chktex warnings are steady false
+# positives in that setting, so we mute them here rather than littering
+# the prose with per-line suppressions:
+#
+#   1  command terminated with space      (macro names followed by code)
+#   8  wrong length of dash               (deliberate -- ranges in prose)
+#   11 ellipsis style suggestions
+#   13 inter-sentence spacing             (code identifiers near periods)
+#   22 typographic quote suggestions      (we use straight quotes in code)
+#   26 solo punctuation in math/code
+#   36 use of `...'                       (literal ellipses in output)
+#   38 quote/dash stylistic suggestions
+CmdLine { -n 1 -n 8 -n 11 -n 13 -n 22 -n 26 -n 36 -n 38 }
+
+# Genuine mistakes (unbalanced braces/delimiters, bad \label usage,
+# missing $...$ math, etc.) are left enabled.

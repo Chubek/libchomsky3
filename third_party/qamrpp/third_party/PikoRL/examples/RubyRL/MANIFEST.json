@@ -1,0 +1,10 @@
+{
+  "lua": [
+    "syntax.lua",
+    "colors.lua",
+    "history.lua",
+    "macros.lua",
+    "theme.lua",
+    "web.lua"
+  ]
+}

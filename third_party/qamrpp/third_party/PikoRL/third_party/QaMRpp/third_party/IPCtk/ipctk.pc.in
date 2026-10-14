@@ -1,0 +1,10 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+
+auto_name=IPCtk
+Name: IPCtk
+Description: Header-only IPC toolkit with IPC-L and ITKD DSL support
+Version: @PROJECT_VERSION@
+Cflags: -I${includedir}

@@ -1,0 +1,668 @@
+schema_version: 1
+name: jiterati-api
+version: 0.1.0
+language: C++17
+namespace_root: jiterati
+stability:
+  classes:
+    public_header_api: declarations present in include/ and documented here
+    ir_header_api: declarations present in IR/*.hpp and documented here
+    backend_metadata_api: declarations present in BE/Metadata.hpp
+    implementation_scaffolding: callable surface present but not a complete subsystem contract
+  compatibility_policy:
+    source: public headers are the source-compatibility boundary
+    binary: no stable ABI guarantee
+    ownership: owning containers keep object lifetime unless otherwise specified
+    diagnostics: diagnostic shape is stable; exact wording is test-sensitive only where tests assert it
+headers:
+  - path: include/Jiterati.hpp
+    namespace: jiterati
+    role: core header-only IR, DSL builders, and JIT façade
+  - path: include/Jiterati-BE.hpp
+    namespace: jiterati
+    role: JIT backend interface and backend utilities
+  - path: include/Jiterati-Pass.hpp
+    namespace: jiterati
+    role: pass base classes and pass manager
+  - path: include/Jiterati-Plugin.hpp
+    namespace: jiterati
+    role: plugin registry metadata API
+  - path: include/Jiterati-Macro.hpp
+    namespace: jiterati
+    role: Lua/Sol2 macro runtime API
+  - path: include/DSLtk.hpp
+    namespace: jiterati::dsltk
+    role: parser-combinator skeleton
+  - path: IR/IR.hpp
+    namespace: jiterati::ir
+    role: Terse IR, TAC IR, parser, validation, rewrite, peephole API
+  - path: IR/ICompiler.hpp
+    namespace: jiterati::ir
+    role: backend artifact compiler API
+  - path: BE/Metadata.hpp
+    namespace: jiterati::be
+    role: backend dataset metadata lookup API
+modules:
+  core:
+    header: include/Jiterati.hpp
+    namespace: jiterati
+    enums:
+      - name: PrimType
+        underlying_type: implementation-defined
+        values: [Void, I1, I8, I16, I32, I64, F32, F64, Ptr]
+        semantics: primitive scalar and pointer type tags
+      - name: Opcode
+        underlying_type: uint16_t
+        categories:
+          constants: []
+          data_movement: [Copy]
+          integer_arithmetic: [Add, Sub, Mul, SDiv, SRem, UDiv, URem, Neg]
+          floating_arithmetic: []
+          bitwise: [And, Or, Xor, Shl, LShr, AShr, Not]
+          comparisons: [ICmpEq, ICmpNe, ICmpSLt, ICmpSLe, ICmpSGt, ICmpSGe, ICmpULt, ICmpULe, ICmpUGt, ICmpUGe]
+          conversion: [Trunc, ZExt, SExt, IntToPtr, PtrToInt]
+          memory: [Load, Store, Alloca, GetParam]
+          control_flow: [Ret, Br, CondBr, Switch, Unreachable, Phi, Select]
+          calls: [Call]
+    aliases:
+      - name: Constant
+        type: std::variant<std::monostate, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double, void*>
+        semantics: function-local constant-pool payload
+    free_functions:
+      - name: opcode_is_terminator
+        signature: bool opcode_is_terminator(Opcode op)
+        returns: true for Ret, Br, CondBr, Switch, Call, Unreachable
+      - name: opcode_is_commutative
+        signature: bool opcode_is_commutative(Opcode op)
+        returns: true for commutative arithmetic, bitwise, and equality comparison opcodes
+      - name: opcode_name
+        signature: std::string opcode_name(Opcode op)
+        returns: stable textual opcode spelling
+      - name: constant_to_string
+        signature: std::string constant_to_string(Constant const& c, Type ty)
+        returns: textual constant spelling under a declared type
+    classes:
+      - name: Type
+        kind: value
+        invariants:
+          - wraps exactly one PrimType
+          - default-constructed type is void
+        constructors:
+          - Type()
+          - explicit Type(PrimType p)
+        static_factories: [void_ty, i1, i8, i16, i32, i64, f32, f64, ptr]
+        methods:
+          - {name: prim, signature: PrimType prim() const, semantics: returns primitive tag}
+          - {name: is_void, signature: bool is_void() const, semantics: true for void}
+          - {name: is_int, signature: bool is_int() const, semantics: true for i1/i8/i16/i32/i64}
+          - {name: is_float, signature: bool is_float() const, semantics: true for f32/f64}
+          - {name: is_pointer, signature: bool is_pointer() const, semantics: true for ptr}
+          - {name: size, signature: std::size_t size() const, semantics: byte size; ptr uses sizeof(void*)}
+          - {name: to_string, signature: std::string to_string() const, semantics: canonical type spelling}
+          - {name: operator==, signature: bool operator==(Type const&) const, semantics: tag equality}
+          - {name: operator!=, signature: bool operator!=(Type const&) const, semantics: tag inequality}
+      - name: Value
+        kind: handle
+        representation:
+          invalid: 0
+          vreg: positive biased index
+          constant: negative biased constant-pool index
+        constructors:
+          - Value()
+          - explicit Value(int32_t idx)
+        static_factories:
+          - {name: none, signature: static Value none(), semantics: invalid sentinel}
+          - {name: vreg, signature: static Value vreg(uint32_t idx), semantics: virtual-register handle}
+          - {name: const_idx, signature: static Value const_idx(uint32_t pool_idx), semantics: constant-pool handle}
+        methods:
+          - {name: valid, signature: bool valid() const}
+          - {name: is_vreg, signature: bool is_vreg() const}
+          - {name: is_const, signature: bool is_const() const}
+          - {name: vreg_index, signature: uint32_t vreg_index() const, precondition: is_vreg()}
+          - {name: const_index, signature: uint32_t const_index() const, precondition: is_const()}
+          - {name: raw, signature: int32_t raw() const}
+          - {name: to_string, signature: std::string to_string() const}
+          - {name: operator==, signature: bool operator==(Value const&) const}
+          - {name: operator!=, signature: bool operator!=(Value const&) const}
+      - name: Instruction
+        kind: object
+        ownership: stored by Function; referenced by Block instruction lists
+        fields: [id, opcode, type, operands, name, parent]
+        constructors:
+          - Instruction()
+          - Instruction(uint32_t id, Opcode op, Type ty, std::vector<Value> operands = {})
+        methods:
+          - {name: id, signature: uint32_t id() const}
+          - {name: opcode, signature: Opcode opcode() const}
+          - {name: type, signature: Type type() const}
+          - {name: operands, signature: std::vector<Value> const& operands() const}
+          - {name: operands_mut, signature: std::vector<Value>& operands()}
+          - {name: operand, signature: Value operand(std::size_t i) const, error: std::out_of_range on invalid index}
+          - {name: set_operand, signature: void set_operand(std::size_t i, Value v), error: std::out_of_range on invalid index}
+          - {name: name, signature: std::string const& name() const}
+          - {name: set_name, signature: void set_name(std::string n)}
+          - {name: parent, signature: Block* parent() const}
+          - {name: set_parent, signature: void set_parent(Block* b)}
+          - {name: is_terminator, signature: bool is_terminator() const}
+          - {name: is_commutative, signature: bool is_commutative() const}
+          - {name: to_string, signature: std::string to_string() const}
+      - name: Block
+        kind: basic_block
+        ownership: owned by Function
+        constructor: explicit Block(Function* fn, std::string name)
+        accessors:
+          - function
+          - name
+          - instructions
+          - successors
+          - predecessors
+        primitive_methods:
+          - {name: append, signature: Instruction* append(Instruction* inst), semantics: appends existing instruction and sets parent}
+          - {name: arg, signature: Value arg(std::size_t idx) const, semantics: function parameter handle}
+          - {name: make_value, signature: Value make_value(uint32_t inst_id) const}
+          - {name: make_instruction, signature: Instruction* make_instruction(Opcode op, Type ty, std::vector<Value> operands)}
+          - {name: build_instruction, signature: Value build_instruction(Opcode op, Type ty, std::vector<Value> operands)}
+        builders:
+          terminators:
+            - {name: ret, signature: void ret(Value v)}
+            - {name: ret_void, signature: void ret_void()}
+            - {name: br, signature: void br(Block* target)}
+            - {name: cond_br, signature: void cond_br(Value cond, Block* true_target, Block* false_target)}
+          memory:
+            - {name: load, signature: Value load(Type ty, Value ptr)}
+            - {name: store, signature: void store(Value ptr, Value val)}
+            - {name: alloca, signature: Value alloca(Type ty)}
+          arithmetic:
+            - add
+            - sub
+            - mul
+            - sdiv
+            - srem
+            - udiv
+            - urem
+            - neg
+          bitwise:
+            - bitwise_and
+            - bitwise_or
+            - bitwise_xor
+            - shl
+            - lshr
+            - ashr
+            - bitwise_not
+          comparisons:
+            - icmp_eq
+            - icmp_ne
+            - icmp_slt
+            - icmp_sle
+            - icmp_sgt
+            - icmp_sge
+          conversions:
+            - trunc
+            - zext
+            - sext
+            - inttoptr
+            - ptrtoint
+          other:
+            - {name: select, signature: Value select(Value cond, Value a, Value b)}
+            - {name: call, signature: Value call(Function* callee, std::vector<Value> args)}
+            - {name: phi, signature: Value phi(Type ty, std::vector<std::pair<Block*, Value>> const& preds)}
+          cfg:
+            - {name: add_successor, signature: void add_successor(Block* succ)}
+            - {name: add_predecessor, signature: void add_predecessor(Block* pred)}
+      - name: Function
+        kind: container
+        ownership: owned by Module; owns blocks, instructions, constants
+        constructor: Function(Module* mod, std::string name, Type ret_ty, std::vector<Type> params)
+        methods:
+          - {name: module, signature: Module* module() const}
+          - {name: name, signature: std::string const& name() const}
+          - {name: ret_type, signature: Type ret_type() const}
+          - {name: param_types, signature: std::vector<Type> const& param_types() const}
+          - {name: create_block, signature: Block* create_block(std::string name)}
+          - {name: entry_block, signature: Block* entry_block() const}
+          - {name: blocks, signature: std::vector<std::unique_ptr<Block>> const& blocks() const}
+          - {name: blocks_mut, signature: std::vector<std::unique_ptr<Block>>& blocks()}
+          - {name: instr_storage, signature: std::list<Instruction>& instr_storage()}
+          - {name: instr_storage_const, signature: std::list<Instruction> const& instr_storage() const}
+          - {name: make_instruction, signature: Instruction* make_instruction(Opcode op, Type ty, std::vector<Value> operands)}
+          - {name: make_constant, signature: Instruction* make_constant(Constant c, Type ty)}
+          - {name: const_value, signature: Constant const_value(uint32_t idx) const}
+          - {name: const_type, signature: Type const_type(uint32_t idx) const}
+          - {name: const_count, signature: std::size_t const_count() const}
+          - {name: value_type, signature: Type value_type(Value v) const}
+          - {name: param_count, signature: std::size_t param_count() const}
+          - {name: param_value, signature: Value param_value(std::size_t idx) const}
+          - {name: const_i32, signature: Value const_i32(int32_t v)}
+          - {name: const_i64, signature: Value const_i64(int64_t v)}
+          - {name: const_bool, signature: Value const_bool(bool v)}
+          - {name: const_ptr, signature: Value const_ptr(std::nullptr_t)}
+          - {name: instruction_by_id, signature: Instruction* instruction_by_id(uint32_t id)}
+          - {name: to_string, signature: std::string to_string() const}
+      - name: Module
+        kind: container
+        ownership: owns functions
+        constructor: explicit Module(std::string name = "module")
+        methods:
+          - {name: name, signature: std::string const& name() const}
+          - {name: create_function, signature: Function* create_function(std::string name, Type ret_ty, std::vector<Type> params)}
+          - {name: create_function_template, signature: template <typename Sig> Function* create_function(std::string name)}
+          - {name: functions, signature: std::vector<std::unique_ptr<Function>> const& functions() const}
+          - {name: functions_mut, signature: std::vector<std::unique_ptr<Function>>& functions()}
+          - {name: find_function, signature: Function* find_function(std::string_view name) const}
+          - {name: to_string, signature: std::string to_string() const}
+      - name: TypeOf
+        kind: template_traits
+        specializations: [void, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double, void*, T*]
+        method: static Type get()
+      - name: SignatureOf
+        kind: template_traits
+        specialization: Ret(Args...)
+        methods:
+          - static Type ret()
+          - static std::vector<Type> params()
+      - name: JIT
+        kind: facade
+        methods:
+          - {name: create_default, signature: static JIT create_default()}
+          - {name: compile, signature: std::unique_ptr<CompiledFunction> compile(Function& fn, Backend& backend)}
+  backend_jit:
+    header: include/Jiterati-BE.hpp
+    namespace: jiterati
+    classes:
+      - name: CompiledFunction
+        kind: artifact
+        ownership: owns optional executable memory and exposes raw pointer
+        methods:
+          - {name: base, signature: void* base() const}
+          - {name: entry, signature: void* entry() const}
+          - {name: size, signature: std::size_t size() const}
+          - {name: as, signature: template <typename T> T as() const}
+      - name: AssemblerContext
+        kind: byte_emitter
+        methods:
+          - {name: destructor, signature: virtual ~AssemblerContext() = default}
+          - {name: emit_bytes, signature: virtual void emit_bytes(const void* data, std::size_t len) = 0}
+          - {name: offset, signature: virtual std::size_t offset() const = 0}
+          - {name: bind_label, signature: virtual void bind_label(uint32_t label_id) = 0}
+          - {name: reloc_label, signature: virtual void reloc_label(uint32_t label_id, std::ptrdiff_t addend) = 0}
+          - {name: reloc_function, signature: virtual void reloc_function(std::string const& name, std::ptrdiff_t addend) = 0}
+          - {name: emit, signature: template <typename T> void emit(T value)}
+      - name: RegAllocator
+        kind: utility
+        methods:
+          - {name: destructor, signature: virtual ~RegAllocator() = default}
+          - {name: allocate, signature: virtual std::vector<int> allocate(Function& fn, int num_physical_regs, std::vector<int>* out_spill_slots) = 0}
+      - name: ABI
+        kind: target_policy
+        methods:
+          - {name: destructor, signature: virtual ~ABI() = default}
+          - {name: num_arg_regs, signature: virtual int num_arg_regs() const = 0}
+          - {name: arg_reg, signature: virtual int arg_reg(std::size_t i) const = 0}
+          - {name: ret_reg, signature: virtual int ret_reg() const = 0}
+          - {name: callee_saved_regs, signature: virtual std::set<int> callee_saved_regs() const = 0}
+          - {name: caller_saved_regs, signature: virtual std::set<int> caller_saved_regs() const = 0}
+          - {name: stack_alignment, signature: virtual std::size_t stack_alignment() const = 0}
+      - name: Backend
+        kind: abstract_interface
+        methods:
+          - {name: destructor, signature: virtual ~Backend() = default}
+          - {name: target_id, signature: virtual std::string target_id() const = 0}
+          - {name: compile_function, signature: virtual std::unique_ptr<CompiledFunction> compile_function(Function& fn) = 0}
+          - {name: emit_assembly, signature: virtual std::string emit_assembly(Function& fn)}
+          - {name: create_assembler_context, signature: virtual std::unique_ptr<AssemblerContext> create_assembler_context() = 0}
+          - {name: abi, signature: virtual ABI& abi() = 0}
+          - {name: allocator, signature: virtual RegAllocator& allocator() = 0}
+    free_functions:
+      - name: lower_divrem_sequence
+        signature: std::vector<Opcode> lower_divrem_sequence(Opcode op, Type ty)
+        semantics: helper for division/remainder lowering sequences
+  passes:
+    header: include/Jiterati-Pass.hpp
+    namespace: jiterati
+    classes:
+      - name: Pass
+        kind: abstract_base
+        methods:
+          - {name: destructor, signature: virtual ~Pass() = default}
+          - {name: name, signature: virtual std::string name() const = 0}
+      - name: FunctionPass
+        inherits: [Pass]
+        methods:
+          - {name: run, signature: virtual void run(Function&) = 0}
+      - name: ModulePass
+        inherits: [Pass]
+        methods:
+          - {name: run, signature: virtual void run(Module&) = 0}
+      - name: AnalysisPass
+        inherits: [Pass]
+        semantics: marker base for analyses
+      - name: TransformPass
+        inherits: [Pass]
+        semantics: marker base for transformations
+      - name: PassManager
+        kind: owner
+        methods:
+          - {name: add, signature: void add(std::unique_ptr<Pass> pass)}
+          - {name: run, signature: void run(Module& m), semantics: executes module passes; other pass kinds require explicit scheduling support}
+      - name: AnalysisManager
+        kind: placeholder
+        semantics: reserved analysis-cache API
+    free_functions:
+      - name: parse_jpl_pipeline
+        signature: PassManager parse_jpl_pipeline(std::string_view source)
+        semantics: parses whitespace/semicolon separated pass names into a PassManager
+  plugins:
+    header: include/Jiterati-Plugin.hpp
+    namespace: jiterati
+    structs:
+      - name: PluginVersion
+        fields:
+          - {name: major, type: int, default: 0}
+          - {name: minor, type: int, default: 0}
+          - {name: patch, type: int, default: 0}
+    classes:
+      - name: PluginRegistry
+        kind: singleton_registry
+        methods:
+          - {name: instance, signature: static PluginRegistry& instance()}
+          - {name: register_plugin, signature: void register_plugin(const char* name, PluginVersion version)}
+          - {name: count, signature: std::size_t count() const}
+          - {name: has_plugin, signature: bool has_plugin(std::string const& name) const}
+          - {name: version_of, signature: PluginVersion version_of(std::string const& name) const}
+        failure_modes:
+          - version_of returns default PluginVersion for missing names
+  macros:
+    header: include/Jiterati-Macro.hpp
+    namespace: jiterati
+    dependency: sol2 and Lua headers/libraries
+    classes:
+      - name: Macro
+        kind: callback_container
+        type_aliases:
+          - {name: MainFn, type: std::function<void()>}
+          - {name: InitFn, type: std::function<void()>}
+          - {name: CleanupFn, type: std::function<void()>}
+        constructors:
+          - Macro()
+          - explicit Macro(std::string name)
+        methods:
+          - {name: name, signature: const std::string& name() const noexcept}
+          - {name: set_name, signature: void set_name(std::string name)}
+          - {name: valid, signature: bool valid() const noexcept, semantics: true iff name is nonempty}
+          - {name: set_init, signature: void set_init(InitFn fn)}
+          - {name: set_main, signature: void set_main(MainFn fn)}
+          - {name: set_cleanup, signature: void set_cleanup(CleanupFn fn)}
+          - {name: init, signature: void init(), semantics: invokes callback when present}
+          - {name: main, signature: void main(), semantics: invokes callback when present}
+          - {name: cleanup, signature: void cleanup(), semantics: invokes callback when present}
+      - name: MacroRegistry
+        kind: registry
+        methods:
+          - {name: has, signature: bool has(std::string_view name) const}
+          - {name: find, signature: Macro* find(std::string_view name)}
+          - {name: find_const, signature: const Macro* find(std::string_view name) const}
+          - {name: emplace, signature: Macro& emplace(std::string name)}
+          - {name: add, signature: void add(Macro macro)}
+          - {name: remove, signature: void remove(std::string_view name)}
+          - {name: clear, signature: void clear()}
+          - {name: size, signature: std::size_t size() const noexcept}
+      - name: LuaRuntime
+        kind: lua_state_owner_or_view
+        constructors:
+          - LuaRuntime()
+          - explicit LuaRuntime(sol::state& lua)
+        methods:
+          - {name: state, signature: sol::state& state()}
+          - {name: state_const, signature: const sol::state& state() const}
+          - {name: registry, signature: MacroRegistry& registry()}
+          - {name: registry_const, signature: const MacroRegistry& registry() const}
+          - {name: open_libraries, signature: void open_libraries()}
+          - {name: bind_api, signature: void bind_api()}
+          - {name: load_file, signature: void load_file(const std::string& path)}
+          - {name: run_string, signature: void run_string(const std::string& code)}
+    free_functions:
+      - {name: register_ljiterati, signature: void register_ljiterati(sol::state& lua, MacroRegistry& registry)}
+      - {name: register_macro_api, signature: void register_macro_api(sol::state& lua, MacroRegistry& registry)}
+      - {name: make_macro, signature: Macro make_macro(std::string name)}
+      - {name: load_macro_script, signature: void load_macro_script(LuaRuntime& runtime, const std::string& path)}
+      - {name: execute_macro_script, signature: void execute_macro_script(LuaRuntime& runtime, const std::string& code)}
+  dsltk:
+    header: include/DSLtk.hpp
+    namespace: jiterati::dsltk
+    status: placeholder_skeleton
+    structs:
+      - name: ParseError
+        fields:
+          - {name: line, type: std::size_t, default: 1}
+          - {name: column, type: std::size_t, default: 1}
+          - {name: message, type: const char*, default: ""}
+      - name: ParseResult<T>
+        fields:
+          - {name: value, type: T}
+          - {name: rest, type: std::string_view}
+          - {name: error, type: ParseError}
+    aliases:
+      - name: Parser<T>
+        type: std::function<std::optional<ParseResult<T>>(std::string_view)>
+  ir:
+    header: IR/IR.hpp
+    namespace: jiterati::ir
+    enums:
+      - name: ScalarType
+        values: [Void, Bool, I32, I64, F32, F64, Ptr]
+      - name: TerseOp
+        values: [Literal, Argument, Unary, Binary, Call, Let, If]
+      - name: UnaryOp
+        values: [Neg, Not]
+      - name: BinaryOp
+        values: [Add, Sub, Mul, SDiv, UDiv, SRem, URem, And, Or, Xor, Shl, LShr, AShr, Eq, Ne, SLt, SLe, SGt, SGe, ULt, ULe, UGt, UGe]
+      - name: TACOpcode
+        values: [Nop, Const, Move, Add, Sub, Mul, SDiv, UDiv, SRem, URem, Neg, And, Or, Xor, Shl, LShr, AShr, Not, Eq, Ne, SLt, SLe, SGt, SGe, ULt, ULe, UGt, UGe, Select, Call, Return, Branch, CondBranch, Phi]
+    aliases:
+      - {name: Immediate, type: std::variant<std::monostate, bool, std::int64_t, double, std::nullptr_t>}
+      - {name: TempId, type: std::uint32_t}
+      - {name: BlockId, type: std::uint32_t}
+    structs:
+      - name: Type
+        fields:
+          - {name: scalar, type: ScalarType, default: Void}
+        static_factories: [void_ty, bool_ty, i32, i64, f32, f64, ptr]
+        methods:
+          - {name: str, signature: std::string str() const}
+          - {name: is_void, signature: bool is_void() const}
+          - {name: is_integer, signature: bool is_integer() const}
+          - {name: is_float, signature: bool is_float() const}
+          - {name: operator==, signature: bool operator==(Type const&) const}
+          - {name: operator!=, signature: bool operator!=(Type const&) const}
+      - name: Parameter
+        fields:
+          - {name: name, type: std::string}
+          - {name: type, type: Type}
+      - name: TerseExpr
+        fields:
+          - {name: op, type: TerseOp}
+          - {name: type, type: Type}
+          - {name: literal, type: Immediate}
+          - {name: symbol, type: std::string}
+          - {name: unary, type: UnaryOp}
+          - {name: binary, type: BinaryOp}
+          - {name: children, type: std::vector<TerseExpr>}
+        static_factories: [literal_of, argument, unary_expr, binary_expr, call, let, if_expr]
+        methods:
+          - {name: str, signature: std::string str() const}
+      - name: TerseFunction
+        fields:
+          - {name: name, type: std::string}
+          - {name: return_type, type: Type}
+          - {name: parameters, type: std::vector<Parameter>}
+          - {name: body, type: TerseExpr}
+        methods:
+          - {name: str, signature: std::string str() const}
+      - name: TerseModule
+        fields:
+          - {name: name, type: std::string, default: module}
+          - {name: functions, type: std::vector<TerseFunction>}
+        methods:
+          - {name: add_function, signature: TerseFunction& add_function(std::string name, Type return_type, std::vector<Parameter> parameters)}
+          - {name: str, signature: std::string str() const}
+      - name: TACValue
+        nested_enums:
+          - name: Kind
+            values: [Invalid, Temporary, Parameter, Constant]
+        fields:
+          - {name: kind, type: Kind, default: Invalid}
+          - {name: index, type: std::uint32_t, default: 0}
+          - {name: type, type: Type}
+          - {name: constant, type: Immediate}
+          - {name: name, type: std::string}
+        static_factories: [invalid, temporary, parameter, constant_value]
+        methods:
+          - {name: valid, signature: bool valid() const}
+          - {name: str, signature: std::string str() const}
+      - name: TACInstruction
+        fields:
+          - {name: opcode, type: TACOpcode, default: Nop}
+          - {name: type, type: Type}
+          - {name: result, type: std::optional<TACValue>}
+          - {name: operands, type: std::vector<TACValue>}
+          - {name: symbol, type: std::string}
+          - {name: targets, type: std::vector<BlockId>}
+        methods:
+          - {name: is_terminator, signature: bool is_terminator() const}
+          - {name: str, signature: std::string str() const}
+      - name: TACBlock
+        fields:
+          - {name: id, type: BlockId, default: 0}
+          - {name: name, type: std::string}
+          - {name: instructions, type: std::vector<TACInstruction>}
+        methods:
+          - {name: has_terminator, signature: bool has_terminator() const}
+          - {name: label, signature: std::string label() const}
+          - {name: str, signature: std::string str() const}
+      - name: TACFunction
+        fields:
+          - {name: name, type: std::string}
+          - {name: return_type, type: Type}
+          - {name: parameters, type: std::vector<Parameter>}
+          - {name: blocks, type: std::vector<TACBlock>}
+        methods:
+          - {name: add_block, signature: "TACBlock& add_block(std::string name = {})"}
+          - {name: make_temp, signature: TACValue make_temp(Type type)}
+          - {name: append, signature: TACInstruction& append(BlockId block, TACInstruction instruction)}
+          - {name: find_block, signature: TACBlock* find_block(BlockId id)}
+          - {name: find_block_const, signature: TACBlock const* find_block(BlockId id) const}
+          - {name: temp_count, signature: TempId temp_count() const}
+          - {name: str, signature: std::string str() const}
+      - name: TACModule
+        fields:
+          - {name: name, type: std::string, default: module}
+          - {name: functions, type: std::vector<TACFunction>}
+        methods:
+          - {name: add_function, signature: TACFunction& add_function(std::string name, Type return_type, std::vector<Parameter> parameters)}
+          - {name: find_function, signature: TACFunction* find_function(std::string const& name)}
+          - {name: find_function_const, signature: TACFunction const* find_function(std::string const& name) const}
+          - {name: str, signature: std::string str() const}
+      - name: Diagnostic
+        nested_enums:
+          - name: Severity
+            values: [Note, Warning, Error]
+        fields:
+          - {name: severity, type: Severity, default: Error}
+          - {name: message, type: std::string}
+          - {name: function, type: std::string}
+          - {name: block, type: BlockId, default: 0}
+    free_functions:
+      - {name: immediate_str, signature: std::string immediate_str(Immediate const& immediate)}
+      - {name: unary_op_str, signature: std::string unary_op_str(UnaryOp op)}
+      - {name: binary_op_str, signature: std::string binary_op_str(BinaryOp op)}
+      - {name: tac_opcode_str, signature: std::string tac_opcode_str(TACOpcode op)}
+      - {name: tac_opcode_for_unary, signature: TACOpcode tac_opcode_for(UnaryOp op)}
+      - {name: tac_opcode_for_binary, signature: TACOpcode tac_opcode_for(BinaryOp op)}
+      - {name: diagnostic_str, signature: std::string diagnostic_str(Diagnostic const& diagnostic)}
+      - {name: lower_to_tac_function, signature: TACFunction lower_to_tac(TerseFunction const& function)}
+      - {name: lower_to_tac_module, signature: TACModule lower_to_tac(TerseModule const& module)}
+      - {name: validate_function, signature: std::vector<Diagnostic> validate(TACFunction const& function)}
+      - {name: validate_module, signature: std::vector<Diagnostic> validate(TACModule const& module)}
+      - {name: rewrite_values, signature: void rewrite_values(TACFunction& function, TACValue const& from, TACValue const& to)}
+      - {name: peephole_function, signature: bool peephole(TACFunction& function)}
+      - {name: peephole_module, signature: bool peephole(TACModule& module)}
+      - {name: parse_terse_module, signature: std::optional<TerseModule> parse_terse_module(std::string const& source, std::vector<Diagnostic>* diagnostics = nullptr)}
+  ir_compiler:
+    header: IR/ICompiler.hpp
+    namespace: jiterati::ir
+    enums:
+      - name: ArtifactFormat
+        values: [IRText, Assembly, Object, WasmBinary]
+    structs:
+      - name: CompileOptions
+        fields:
+          - {name: optimize_tac, type: bool, default: true}
+          - {name: verify_input, type: bool, default: true}
+          - {name: emit_comments, type: bool, default: true}
+      - name: CompilationArtifact
+        fields:
+          - {name: target, type: std::string}
+          - {name: format, type: ArtifactFormat, default: IRText}
+          - {name: bytes, type: std::vector<std::uint8_t>}
+          - {name: text, type: std::string}
+          - {name: diagnostics, type: std::vector<Diagnostic>}
+        methods:
+          - {name: ok, signature: bool ok() const, semantics: false when any diagnostic has severity Error}
+    classes:
+      - name: ICompiler
+        kind: abstract_interface
+        methods:
+          - {name: destructor, signature: virtual ~ICompiler() = default}
+          - {name: target, signature: virtual std::string target() const = 0}
+          - {name: format, signature: virtual ArtifactFormat format() const = 0}
+          - {name: compile_tac, signature: "virtual CompilationArtifact compile(TACModule const& module, CompileOptions options = {}) = 0"}
+          - {name: compile_terse, signature: "CompilationArtifact compile(TerseModule const& module, CompileOptions options = {})", semantics: lowers TerseModule to TACModule then delegates}
+    factories:
+      - {name: create_amd64_ir_compiler, signature: std::unique_ptr<ICompiler> create_amd64_ir_compiler()}
+      - {name: create_aarch64_ir_compiler, signature: std::unique_ptr<ICompiler> create_aarch64_ir_compiler()}
+      - {name: create_rv64_ir_compiler, signature: std::unique_ptr<ICompiler> create_rv64_ir_compiler()}
+      - {name: create_wasm_ir_compiler, signature: std::unique_ptr<ICompiler> create_wasm_ir_compiler()}
+  backend_metadata:
+    header: BE/Metadata.hpp
+    namespace: jiterati::be
+    structs:
+      - name: BackendDatasetMetadata
+        fields:
+          - {name: target, type: std::string_view}
+          - {name: dataset_arch, type: std::string_view}
+          - {name: dataset_source, type: std::string_view}
+          - {name: instruction_count, type: std::size_t}
+          - {name: mnemonic_count, type: std::size_t}
+    free_functions:
+      - {name: backend_dataset_metadata_begin, signature: BackendDatasetMetadata const* backend_dataset_metadata_begin()}
+      - {name: backend_dataset_metadata_end, signature: BackendDatasetMetadata const* backend_dataset_metadata_end()}
+      - {name: find_backend_dataset_metadata, signature: BackendDatasetMetadata const* find_backend_dataset_metadata(std::string_view target)}
+contracts:
+  ownership:
+    Module: owns Function instances
+    Function: owns Block, Instruction, and Constant storage
+    Block: references Function-owned Instruction objects
+    CompiledFunction: owns executable/object memory when constructed with owned storage
+    PassManager: owns Pass instances via std::unique_ptr
+    LuaRuntime: owns an internal sol::state unless constructed from an external state reference
+  validation:
+    core_api: builder calls do not constitute full semantic validation
+    ir_api: validate(TACFunction) and validate(TACModule) are the explicit validation boundary
+    backend_api: callers should validate before compilation; compilers may revalidate when CompileOptions.verify_input is true
+  determinism:
+    serialization: to_string and str methods should emit deterministic text
+    registries: lookup by exact string key
+    backend_metadata: iteration order should be stable across a build
+  error_model:
+    parser: optional result plus diagnostics vector
+    validation: diagnostics vector
+    compiler: CompilationArtifact diagnostics plus ok()
+    plugin_registry: missing version returns default PluginVersion
+    macro_runtime: Lua/Sol2 errors propagate through script execution calls
+cross_references:
+  ir_language_spec: specs/IR.md
+  ir_grammar: specs/IR.ebnf
+  backend_spec: specs/backend-specs.yaml
+  pass_spec: specs/passes-specs.yaml
+  plugin_spec: specs/plugin-specs.yaml
+  manual: docs/manual

@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: PikoRL
+Description: Pikorl header-only readline library
+Version: @PACKAGE_VERSION@
+
+Libs: -L${HOME}/.qamrpp/qamrpp-pikorl.so
+Cflags: -I${includedir}
+

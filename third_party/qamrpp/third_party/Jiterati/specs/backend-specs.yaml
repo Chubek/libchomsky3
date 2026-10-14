@@ -1,0 +1,42 @@
+schema_version: 1
+backends:
+  - name: AMD64
+    supported_targets: [x86_64-linux-gnu, x86_64-darwin, x86_64-windows-msvc]
+    architecture: AMD64 / x86-64
+    dataset: .agents/datasets/amd64.lua
+    relocation_model: [static, pic]
+    object_formats: [elf64, macho64, coff]
+    executable_formats: [elf, macho, pe]
+    code_generation_stages: [instruction_selection, register_allocation, rewrite, peephole, emission]
+    supported_features: [integer_arithmetic, branches, calls, basic_memory_ops]
+    limitations: [full vector ISA coverage is dataset-driven and may be incomplete in handwritten code]
+  - name: AArch64
+    supported_targets: [aarch64-linux-gnu, arm64-darwin]
+    architecture: ARM64 / AArch64
+    dataset: .agents/datasets/aarch64.lua
+    relocation_model: [static, pic]
+    object_formats: [elf64, macho64]
+    executable_formats: [elf, macho]
+    code_generation_stages: [instruction_selection, register_allocation, rewrite, peephole, emission]
+    supported_features: [integer_arithmetic, branches, calls, basic_memory_ops]
+    limitations: [platform ABI differences must be represented explicitly]
+  - name: RV64
+    supported_targets: [riscv64-linux-gnu]
+    architecture: RISC-V 64
+    dataset: .agents/datasets/rv64.lua
+    relocation_model: [static, pic]
+    object_formats: [elf64]
+    executable_formats: [elf]
+    code_generation_stages: [instruction_selection, register_allocation, rewrite, peephole, emission]
+    supported_features: [rv64i, integer_arithmetic, branches, calls]
+    limitations: [extensions beyond baseline RV64 require feature validation]
+  - name: WASM
+    supported_targets: [wasm32-unknown-unknown, wasm64-unknown-unknown]
+    architecture: WebAssembly
+    dataset: .agents/datasets/wasm.lua
+    relocation_model: [module]
+    object_formats: [wasm]
+    executable_formats: [wasm]
+    code_generation_stages: [instruction_selection, virtual_register_mapping, rewrite, peephole, emission]
+    supported_features: [stack_machine_emission, integer_arithmetic, structured_control_flow]
+    limitations: [host imports and linear-memory ABI must be specified by embedding configuration]

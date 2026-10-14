@@ -1,0 +1,259 @@
+{
+  "lua_standard_library": {
+    "_G": {
+      "type": "table",
+      "description": "Global environment table."
+    },
+    "_VERSION": {
+      "type": "string",
+      "description": "Lua version string."
+    },
+    "assert": {
+      "type": "function",
+      "description": "Raises an error if its argument is false or nil; otherwise returns all arguments."
+    },
+    "collectgarbage": {
+      "type": "function",
+      "description": "Controls the garbage collector."
+    },
+    "dofile": {
+      "type": "function",
+      "description": "Opens and executes a file."
+    },
+    "error": {
+      "type": "function",
+      "description": "Terminates the last protected function called and returns message as the error object."
+    },
+    "getmetatable": {
+      "type": "function",
+      "description": "Returns the metatable of the given object."
+    },
+    "ipairs": {
+      "type": "function",
+      "description": "Returns an iterator for array-like table traversal."
+    },
+    "load": {
+      "type": "function",
+      "description": "Loads a chunk."
+    },
+    "loadfile": {
+      "type": "function",
+      "description": "Loads a file as a Lua chunk."
+    },
+    "next": {
+      "type": "function",
+      "description": "Allows traversal of a table."
+    },
+    "pairs": {
+      "type": "function",
+      "description": "Returns an iterator for table traversal."
+    },
+    "pcall": {
+      "type": "function",
+      "description": "Calls a function in protected mode."
+    },
+    "print": {
+      "type": "function",
+      "description": "Receives any number of arguments and prints their values."
+    },
+    "rawequal": {
+      "type": "function",
+      "description": "Checks whether two values are equal without invoking metamethods."
+    },
+    "rawget": {
+      "type": "function",
+      "description": "Gets the real value of table[index] without invoking metamethods."
+    },
+    "rawlen": {
+      "type": "function",
+      "description": "Returns the length of an object without invoking metamethods."
+    },
+    "rawset": {
+      "type": "function",
+      "description": "Sets the real value of table[index] without invoking metamethods."
+    },
+    "require": {
+      "type": "function",
+      "description": "Loads a module by name, and returns it"
+    },
+    "select": {
+      "type": "function",
+      "description": "Returns a subset of its arguments."
+    },
+    "setmetatable": {
+      "type": "function",
+      "description": "Sets the metatable for the given table."
+    },
+    "tonumber": {
+      "type": "function",
+      "description": "Converts its argument to a number."
+    },
+    "tostring": {
+      "type": "function",
+      "description": "Converts its argument to a string."
+    },
+    "type": {
+      "type": "function",
+      "description": "Returns the type of its only argument."
+    },
+    "xpcall": {
+      "type": "function",
+      "description": "Calls a function in protected mode with a message handler."
+    },
+    "coroutine": {
+      "type": "table",
+      "functions": {
+        "create": "Creates a new coroutine.",
+        "isyieldable": "Checks whether the running coroutine can yield.",
+        "resume": "Starts or continues execution of a coroutine.",
+        "running": "Returns the running coroutine.",
+        "status": "Returns the status of a coroutine.",
+        "wrap": "Creates a coroutine and returns a function that resumes it.",
+        "yield": "Suspends execution of the calling coroutine."
+      }
+    },
+    "package": {
+      "type": "table",
+      "fields": {
+        "config": "Description of some compile-time configurations.",
+        "cpath": "Path used by require for searching C loaders.",
+        "loaded": "Table used by require to control loaded modules.",
+        "path": "Path used by require for searching Lua loaders.",
+        "preload": "Table to store loaders for specific modules.",
+        "searchers": "Table used by require to control how to load modules.",
+        "searchpath": "Searches for a file in a path.",
+        "loadlib": "Dynamically links the host program with a C library."
+      }
+    },
+    "string": {
+      "type": "table",
+      "functions": {
+        "byte": "Returns internal numeric codes of characters.",
+        "char": "Receives zero or more integers and returns a string with corresponding characters.",
+        "dump": "Returns a binary representation of a function.",
+        "find": "Looks for the first match of pattern in the string.",
+        "format": "Returns a formatted version of its variable number of arguments.",
+        "gmatch": "Returns an iterator over pattern matches in a string.",
+        "gsub": "Returns a copy of the string with substitutions.",
+        "len": "Returns the length of a string.",
+        "lower": "Returns a copy of the string with uppercase letters changed to lowercase.",
+        "match": "Looks for the first match of pattern in the string.",
+        "pack": "Returns a binary string containing the values packed.",
+        "packsize": "Returns the size of a string resulting from pack.",
+        "rep": "Returns a string that is the concatenation of n copies of a string.",
+        "reverse": "Returns a string with bytes reversed.",
+        "sub": "Returns the substring of a string.",
+        "unpack": "Returns the values packed in a binary string.",
+        "upper": "Returns a copy of the string with lowercase letters changed to uppercase."
+      }
+    },
+    "utf8": {
+      "type": "table",
+      "functions": {
+        "char": "Receives zero or more integers and returns a UTF-8 string.",
+        "charpattern": "Pattern matching exactly one UTF-8 byte sequence.",
+        "codepoint": "Returns the code points of characters in a string.",
+        "codes": "Returns an iterator over UTF-8 codes in a string.",
+        "len": "Returns the number of UTF-8 characters in a string.",
+        "offset": "Returns the position where encoding of n-th character starts."
+      }
+    },
+    "table": {
+      "type": "table",
+      "functions": {
+        "concat": "Concatenates table elements into a string.",
+        "insert": "Inserts an element in a given position.",
+        "move": "Moves elements from one table to another.",
+        "pack": "Creates a table from all its arguments.",
+        "remove": "Removes an element from a given position.",
+        "sort": "Sorts table elements in place.",
+        "unpack": "Returns elements from a table."
+      }
+    },
+    "math": {
+      "type": "table",
+      "functions": {
+        "abs": "Returns the absolute value.",
+        "acos": "Returns the arc cosine.",
+        "asin": "Returns the arc sine.",
+        "atan": "Returns the arc tangent.",
+        "ceil": "Returns the smallest integral value larger than or equal to x.",
+        "cos": "Returns the cosine.",
+        "deg": "Converts angle from radians to degrees.",
+        "exp": "Returns the value e^x.",
+        "floor": "Returns the largest integral value smaller than or equal to x.",
+        "fmod": "Returns the remainder of division.",
+        "huge": "A value larger than any other numeric value.",
+        "log": "Returns the natural logarithm.",
+        "max": "Returns the maximum value.",
+        "maxinteger": "The maximum value for an integer.",
+        "min": "Returns the minimum value.",
+        "mininteger": "The minimum value for an integer.",
+        "modf": "Returns the integral and fractional parts of a number.",
+        "pi": "The value of π.",
+        "rad": "Converts angle from degrees to radians.",
+        "random": "Returns a pseudo-random integer or float.",
+        "randomseed": "Sets the seed for pseudo-random generator.",
+        "sin": "Returns the sine.",
+        "sqrt": "Returns the square root.",
+        "tan": "Returns the tangent.",
+        "tointeger": "Converts value to an integer.",
+        "type": "Returns whether a number is integer or float.",
+        "ult": "Compares two integers as unsigned."
+      }
+    },
+    "io": {
+      "type": "table",
+      "functions": {
+        "close": "Closes file.",
+        "flush": "Saves any written data to file.",
+        "input": "Gets or sets default input file.",
+        "lines": "Iterates over lines of a file.",
+        "open": "Opens a file.",
+        "output": "Gets or sets default output file.",
+        "popen": "Starts a program in a separate process.",
+        "read": "Reads from default input file.",
+        "tmpfile": "Returns a handle for a temporary file.",
+        "type": "Checks whether object is a valid file handle.",
+        "write": "Writes to default output file."
+      }
+    },
+    "os": {
+      "type": "table",
+      "functions": {
+        "clock": "Returns an approximation of CPU time used.",
+        "date": "Returns date and time formatted.",
+        "difftime": "Returns difference in seconds between times.",
+        "execute": "Executes a system command.",
+        "exit": "Calls the host program to exit.",
+        "getenv": "Returns value of an environment variable.",
+        "remove": "Deletes a file.",
+        "rename": "Renames a file or directory.",
+        "setlocale": "Sets locale for program.",
+        "time": "Returns current time.",
+        "tmpname": "Returns a string with a file name that can be used for a temporary file."
+      }
+    },
+    "debug": {
+      "type": "table",
+      "functions": {
+        "debug": "Enters an interactive mode with user.",
+        "gethook": "Returns current hook settings.",
+        "getinfo": "Returns a table with information about a function.",
+        "getlocal": "Returns name and value of a local variable.",
+        "getmetatable": "Returns metatable of value.",
+        "getregistry": "Returns registry table.",
+        "getupvalue": "Returns name and value of an upvalue.",
+        "getuservalue": "Returns Lua value associated with userdata.",
+        "sethook": "Sets a hook function.",
+        "setlocal": "Assigns value to a local variable.",
+        "setmetatable": "Sets metatable of value.",
+        "setupvalue": "Assigns value to an upvalue.",
+        "setuservalue": "Sets Lua value associated with userdata.",
+        "traceback": "Builds extended error message with traceback.",
+        "upvalueid": "Returns unique identifier for an upvalue.",
+        "upvaluejoin": "Makes two upvalues refer to the same value."
+      }
+    }
+  }
+}

@@ -1,0 +1,284 @@
+# QaMRpp plugin pack manifest for the built-in plugins directory.
+# This file describes what lives in the plugins directory and how consumers
+# are expected to use it.
+name: qa-mrpp-plugins
+version: 0.2.0
+description: >
+  Optional built-in extensions that wire into the QaMRpp runtime and CLI workflows.
+  The package includes compiler backends, serialization hooks, utility helpers,
+  JIT compilation, and AOT compilation.
+  Plugins are organized into per-plugin subdirectories.  Backward-compatible
+  shims at the top level redirect to the subdirectories.
+repository: https://github.com/qamrpp/qamrpp
+license: MIT
+maintainer: QaMRpp Project
+category: runtime-extensions
+keywords:
+  - lua
+  - qamrpp
+  - repl
+  - compiler
+  - transpiler
+  - serde
+  - cli
+  - header-only
+  - jit
+  - aot
+
+artifacts:
+  # --- Harness (single-point inclusion) ---
+  - path: QaMRpp-PluginHarness.hpp
+    type: plugin-harness
+    required: false
+    provides:
+      - install_all
+      - install_one
+      - install_many
+    depends:
+      - include/QaMRpp.hpp
+      - all plugin subdirectories
+
+  # --- compile-to-c ---
+  - path: compile-to-c/QaMRpp-Compile2C.hpp
+    type: plugin-header
+    required: true
+    provides:
+      - compile_to_c
+    depends:
+      - include/QaMRpp.hpp
+    extra_files:
+      - compile-to-c/QaMRpp-CCBackend.hpp
+      - compile-to-c/c_translation.hpp
+  - path: compile-to-c/QaMRpp-CCBackend.hpp
+    type: plugin-header
+    required: true
+    provides:
+      - compile_c
+    depends:
+      - include/QaMRpp.hpp
+  - path: compile-to-c/c_translation.hpp
+    type: helper-header
+    required: false
+  - path: compile-to-c/QaMRpp-Compile2C.cpp
+    type: helper-source
+    required: false
+
+  # --- compile-to-wasm ---
+  - path: compile-to-wasm/QaMRpp-Compile2WASM.hpp
+    type: plugin-header
+    required: true
+    provides:
+      - compile_to_wasm
+    depends:
+      - include/QaMRpp.hpp
+    extra_files:
+      - compile-to-wasm/wasm_translation.hpp
+  - path: compile-to-wasm/wasm_translation.hpp
+    type: helper-header
+    required: false
+  - path: compile-to-wasm/QaMRpp-Compile2WASM.cpp
+    type: helper-source
+    required: false
+
+  # --- compile-to-bytecode ---
+  - path: compile-to-bytecode/QaMRpp-Compile2Bytecode.hpp
+    type: plugin-header
+    required: true
+    provides:
+      - compile_to_bytecode
+    depends:
+      - include/QaMRpp.hpp
+    extra_files:
+      - compile-to-bytecode/bytecode_translation.hpp
+  - path: compile-to-bytecode/bytecode_translation.hpp
+    type: helper-header
+    required: false
+  - path: compile-to-bytecode/QaMRpp-Compile2Bytecode.cpp
+    type: helper-source
+    required: false
+
+  # --- qbf ---
+  - path: qbf/QaMRpp-QBF.hpp
+    type: plugin-header
+    required: false
+    provides:
+      - write_qbf
+      - read_qbf
+    depends:
+      - include/QaMRpp.hpp
+
+  # --- dump ---
+  - path: dump/QaMRpp-Dump.hpp
+    type: plugin-header
+    required: false
+    provides:
+      - set_dump_file
+      - dump hook integration
+    depends:
+      - include/QaMRpp.hpp
+
+  # --- readline ---
+  - path: readline/QaMRpp-Readline.hpp
+    type: plugin-header
+    required: false
+    provides:
+      - polyrl_read
+      - polyrl_history_add
+      - polyrl_complete
+    depends:
+      - include/QaMRpp.hpp
+
+  # --- serialize2json ---
+  - path: serialize2json/QaMRpp-Serialize2JSON.hpp
+    type: plugin-header
+    required: false
+    provides:
+      - serialize_program
+      - get_serialized_program
+    depends:
+      - include/QaMRpp.hpp
+
+  # --- print-ast ---
+  - path: print-ast/QaMRpp-PrintAST.hpp
+    type: plugin-header
+    required: false
+    provides:
+      - print_ast
+      - AST debug hook integration
+    depends:
+      - include/QaMRpp.hpp
+
+  # --- jit-backend ---
+  - path: jit-backend/QaMRpp-JITBackend.hpp
+    type: plugin-header
+    required: false
+    provides:
+      - jit
+      - jit_compile
+    depends:
+      - include/QaMRpp.hpp
+    description: >
+      Method-based JIT compiler using Jiterati.  Translates QaMRpp AST to Jiterati IR, compiles via AMD64 backend, and executes native code at runtime.
+      machine code at runtime and executes them directly.
+
+  # --- aot-backend ---
+  - path: aot-backend/QaMRpp-AOTBackend.hpp
+    type: plugin-header
+    required: false
+    provides:
+      - aot_compile
+      - aot_compile_multi
+      - aot_load
+      - aot_load_file
+      - aot_inspect
+    depends:
+      - include/QaMRpp.hpp
+    description: >
+      Method-based AOT compiler using Jiterati.  Translates QaMRpp AST to Jiterati IR, serializes to .bin files (QMRB format), and provides loader machinery to JIT-compile and execute at runtime.
+      and provides machinery to load and execute them at runtime.
+
+  # --- backward-compatibility shims ---
+  - path: QaMRpp-Compile2C.hpp
+    type: compat-shim
+    required: false
+  - path: QaMRpp-CCBackend.hpp
+    type: compat-shim
+    required: false
+  - path: c_translation.hpp
+    type: compat-shim
+    required: false
+  - path: QaMRpp-Compile2WASM.hpp
+    type: compat-shim
+    required: false
+  - path: wasm_translation.hpp
+    type: compat-shim
+    required: false
+  - path: QaMRpp-Compile2Bytecode.hpp
+    type: compat-shim
+    required: false
+  - path: bytecode_translation.hpp
+    type: compat-shim
+    required: false
+  - path: QaMRpp-QBF.hpp
+    type: compat-shim
+    required: false
+  - path: QaMRpp-Dump.hpp
+    type: compat-shim
+    required: false
+  - path: QaMRpp-Readline.hpp
+    type: compat-shim
+    required: false
+  - path: QaMRpp-Serialize2JSON.hpp
+    type: compat-shim
+    required: false
+  - path: QaMRpp-PrintAST.hpp
+    type: compat-shim
+    required: false
+  - path: QaMRpp-Compile2C.cpp
+    type: compat-shim
+    required: false
+  - path: QaMRpp-Compile2WASM.cpp
+    type: compat-shim
+    required: false
+  - path: QaMRpp-Compile2Bytecode.cpp
+    type: compat-shim
+    required: false
+
+runtime_notes:
+  load_method: |-
+    Plugins are header-only and integrate via `qamrpp::Plugin` by directly including headers.
+    The recommended path is to include `QaMRpp-PluginHarness.hpp` and call
+    `qamrpp::harness::install_all(ctx)` or `qamrpp::harness::install_one(ctx, "PluginName")`.
+    Individual plugins can also be included directly from their subdirectory.
+    All includes use `#include <QaMRpp.hpp>` (the build system must add the include/
+    directory to the search path).
+  supported_runtime: C++ runtime + CLI
+  default_includes:
+    - include/
+    - plugins/
+
+use_cases:
+  - building custom translators inside CLI extensions
+  - emitting C/WASM/bytecode artifacts from parsed IR
+  - enabling AST diagnostics and JSON tracing from plugin hooks
+  - custom REPL readline + completion behavior
+  - method-based JIT compilation of hot code paths
+  - AOT compilation to .bin files for pre-compiled distribution
+
+usage_examples:
+  include_harness: |-
+    // Single-point plugin enablement:
+    #include "plugins/QaMRpp-PluginHarness.hpp"
+    qamrpp::Context ctx;
+    qamrpp::harness::install_all(ctx);
+    ctx.run("jit(1 + 2 * 3)");
+  include_individual: |-
+    // Include a specific plugin directly:
+    #include "plugins/jit-backend/QaMRpp-JITBackend.hpp"
+    qamrpp::Context ctx;
+    qamrpp::JITBackendPlugin jit;
+    jit.install(ctx);
+  aot_usage: |-
+    // AOT compile and load:
+    #include "plugins/aot-backend/QaMRpp-AOTBackend.hpp"
+    qamrpp::Context ctx;
+    qamrpp::AOTBackendPlugin aot;
+    aot.install(ctx);
+    ctx.run("aot_compile('return 42', 'output.bin')");
+    ctx.run("aot_load('output.bin')");
+  build_with_cmake: |-
+    # Add include/ and plugins/ to include paths and include headers directly.
+    target_include_directories(my_app PRIVATE ${QAMRPP_HOME}/include ${QAMRPP_HOME}/plugins)
+
+limitations:
+  - header compatibility requires the same or newer QaMRpp core API
+  - JIT backend requires x86_64 and mmap/VirtualAlloc support
+  - AOT .bin files are architecture-independent (store source, not native code)
+  - JIT supports a subset of AST node types (literals, binary ops, unary ops)
+
+install_paths:
+  plugins_root: ${QAMRPP_HOME}/plugins
+  examples:
+    - qamrpp-cli registers a subset of these plugins by default
+  fallback_when_qamrpp_home_missing:
+    - ~/.qamrpp/plugins

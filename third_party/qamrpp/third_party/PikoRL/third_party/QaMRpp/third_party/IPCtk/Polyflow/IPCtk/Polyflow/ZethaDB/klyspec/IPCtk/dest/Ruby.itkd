@@ -1,0 +1,7 @@
+target ruby
+capability reqrep
+capability pubsub
+import json
+map string -> String
+map bytes -> String
+rule emit_channel = template("def send_channel(ch, payload)\n  ch.write(payload)\nend\n")

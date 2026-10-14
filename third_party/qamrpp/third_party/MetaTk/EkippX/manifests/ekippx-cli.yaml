@@ -1,0 +1,645 @@
+EkippXCLIAPI:
+  meta:
+    name: "EkippX CLI API"
+    header: "EkippX-CLI.hpp"
+    kind: "header-only-cpp-library"
+    status: "tightened-baseline"
+    version: "0.1"
+    namespace: "ekippx::cli"
+    description: >
+      EkippX-CLI.hpp defines the command-line and interactive shell front-end for EkippX.
+      It takes the preprocessing/runtime batteries exposed by EkippX-Batteries.hpp and
+      presents them as a proper executable-oriented CLI surface, including batch expansion,
+      diagnostics, config loading, dependency-style workflows, and an interactive REPL.
+    relationship:
+      host_library: "EkippX-Batteries.hpp"
+      repl_backend: "PikoRL.hpp"
+      syntax_definition: "EkippX.syntax"
+      role: "CLI and REPL front-end for the EkippX preprocessing system"
+
+  language:
+    standard: "C++20"
+    implementation_style: "header-only façade over batteries/runtime services"
+    exception_model: "exception-safe CLI entrypoints with exit-code mapping"
+    memory_model: "raii-and-value-semantics"
+
+  design_principles:
+    - "Use EkippX-Batteries.hpp as the semantic/runtime substrate"
+    - "Expose a clean executable-oriented API from a C++ header-only library"
+    - "Support both one-shot CLI execution and interactive REPL use"
+    - "Launch REPL only when explicitly appropriate"
+    - "Delegate line editing and REPL loop behavior to PikoRL"
+    - "Keep syntax presentation separate through EkippX.syntax"
+    - "Preserve embeddability for host applications and custom launchers"
+
+  dependencies:
+    - name: "EkippX-Batteries.hpp"
+      role: "core preprocessing directives, functions, expanders, runtime, and batteries"
+    - name: "EkippX.hpp"
+      role: "core runtime/model types if CLI builds on the main host API"
+    - name: "PikoRL.hpp"
+      role: "interactive REPL toolkit used by the CLI"
+      observed_api:
+        - "`PikoRL::REPL` exists as the main REPL type in `PikoRL.hpp:67`"
+        - "`PikoRL::REPL::run()` starts the interactive loop in `PikoRL.hpp:118`"
+        - "`PikoRL::REPL::bind_api()` allows host API injection in `PikoRL.hpp:253`"
+    - name: "EkippX.syntax"
+      role: "syntax-highlighting definition for EkippX language input in REPL/editor-facing workflows"
+    - name: "STL"
+      role: "strings, paths, containers, streams, optional values, function objects"
+
+  namespaces:
+    public:
+      - "ekippx::cli"
+      - "ekippx::cli::repl"
+      - "ekippx::cli::config"
+      - "ekippx::cli::detail"
+    rules:
+      - "ekippx::cli is the stable CLI-facing namespace"
+      - "ekippx::cli::repl contains interactive-shell integration points"
+      - "ekippx::cli::detail is internal and non-stable"
+
+  aliases:
+    - name: "String"
+      target: "std::string"
+    - name: "StringView"
+      target: "std::string_view"
+    - name: "Path"
+      target: "std::filesystem::path"
+    - name: "StringList"
+      target: "std::vector<std::string>"
+    - name: "EnvMap"
+      target: "std::unordered_map<std::string, std::string>"
+    - name: "ExitCodeInt"
+      target: "int"
+
+  enums:
+    - name: "LaunchMode"
+      values:
+        - "auto_detect"
+        - "batch"
+        - "interactive"
+
+    - name: "CommandMode"
+      values:
+        - "expand"
+        - "check"
+        - "dump_tokens"
+        - "dump_ast"
+        - "dump_config"
+        - "repl"
+        - "version"
+        - "help"
+
+    - name: "InputMode"
+      values:
+        - "file"
+        - "stdin"
+        - "literal_text"
+        - "none"
+
+    - name: "OutputMode"
+      values:
+        - "stdout"
+        - "file"
+        - "stderr"
+        - "discard"
+
+    - name: "ColorMode"
+      values:
+        - "auto"
+        - "always"
+        - "never"
+
+    - name: "ReplSyntaxMode"
+      values:
+        - "plain"
+        - "ekippx_syntax"
+        - "custom"
+
+    - name: "ExitCode"
+      values:
+        - "success"
+        - "usage_error"
+        - "config_error"
+        - "input_error"
+        - "parse_error"
+        - "runtime_error"
+        - "io_error"
+        - "internal_error"
+
+  exceptions:
+    - name: "CLIError"
+      base: "std::runtime_error"
+      description: "Base exception for CLI-layer failures"
+
+    - name: "ArgumentError"
+      base: "CLIError"
+
+    - name: "LaunchError"
+      base: "CLIError"
+
+    - name: "ReplError"
+      base: "CLIError"
+
+    - name: "BatchExecutionError"
+      base: "CLIError"
+
+  structs:
+    - name: "PositionalArgumentSpec"
+      fields:
+        - { name: "name", type: "String" }
+        - { name: "required", type: "bool" }
+        - { name: "repeatable", type: "bool", default: false }
+        - { name: "description", type: "String" }
+
+    - name: "OptionSpec"
+      fields:
+        - { name: "short_name", type: "String" }
+        - { name: "long_name", type: "String" }
+        - { name: "value_name", type: "String" }
+        - { name: "takes_value", type: "bool", default: false }
+        - { name: "repeatable", type: "bool", default: false }
+        - { name: "description", type: "String" }
+
+    - name: "CLIInfo"
+      fields:
+        - { name: "name", type: "String" }
+        - { name: "executable", type: "String" }
+        - { name: "header", type: "String" }
+        - { name: "description", type: "String" }
+        - { name: "repl_backend", type: "String" }
+        - { name: "syntax_file", type: "String" }
+
+    - name: "ReplConfig"
+      fields:
+        - { name: "enabled", type: "bool", default: true }
+        - { name: "banner", type: "String" }
+        - { name: "prompt_primary", type: "String", default: "ekippx> " }
+        - { name: "prompt_continuation", type: "String", default: "....> " }
+        - { name: "history_file", type: "Path" }
+        - { name: "load_history", type: "bool", default: true }
+        - { name: "save_history", type: "bool", default: true }
+        - { name: "syntax_mode", type: "ReplSyntaxMode", default: "ekippx_syntax" }
+        - { name: "syntax_file", type: "Path" }
+        - { name: "bind_host_api", type: "bool", default: true }
+        - { name: "show_startup_banner", type: "bool", default: true }
+
+    - name: "BatchConfig"
+      fields:
+        - { name: "input_mode", type: "InputMode", default: "file" }
+        - { name: "input_file", type: "Path" }
+        - { name: "output_mode", type: "OutputMode", default: "stdout" }
+        - { name: "output_file", type: "Path" }
+        - { name: "stdin_name", type: "String", default: "<stdin>" }
+        - { name: "treat_input_as_literal", type: "bool", default: false }
+        - { name: "write_bom", type: "bool", default: false }
+
+    - name: "DiagnosticConfig"
+      fields:
+        - { name: "color", type: "ColorMode", default: "auto" }
+        - { name: "quiet", type: "bool", default: false }
+        - { name: "verbose", type: "bool", default: false }
+        - { name: "warnings_as_errors", type: "bool", default: false }
+        - { name: "trace", type: "bool", default: false }
+
+    - name: "CLIConfig"
+      fields:
+        - { name: "launch_mode", type: "LaunchMode", default: "auto_detect" }
+        - { name: "command_mode", type: "CommandMode", default: "expand" }
+        - { name: "batch", type: "BatchConfig" }
+        - { name: "repl", type: "ReplConfig" }
+        - { name: "diagnostics", type: "DiagnosticConfig" }
+        - { name: "batteries", type: "ekippx::Config" }
+        - { name: "working_directory", type: "Path" }
+        - { name: "args", type: "StringList" }
+
+    - name: "ParseCLIResult"
+      fields:
+        - { name: "config", type: "CLIConfig" }
+        - { name: "show_help", type: "bool", default: false }
+        - { name: "show_version", type: "bool", default: false }
+        - { name: "ok", type: "bool", default: true }
+        - { name: "message", type: "String" }
+
+    - name: "RunResult"
+      fields:
+        - { name: "exit_code", type: "ExitCode" }
+        - { name: "message", type: "String" }
+        - { name: "wrote_output", type: "bool", default: false }
+        - { name: "entered_repl", type: "bool", default: false }
+
+  repl_launch_rules:
+    description: >
+      The CLI enters REPL mode only under the explicitly allowed conditions below.
+      All other invocations are treated as non-interactive CLI execution.
+    conditions:
+      - name: "no_arguments"
+        rule: "If the executable receives no user arguments, launch the REPL."
+      - name: "interactive_flag"
+        rule: "If `--interactive` or `-i` is present, launch the REPL."
+    negative_rules:
+      - "Do not launch the REPL when positional or option arguments are supplied unless `--interactive` or `-i` is also present."
+      - "Do not silently fall back to REPL after batch-mode errors."
+      - "Do not infer REPL mode from stdin attachment alone."
+    precedence:
+      - "`--help` and `--version` may short-circuit normal execution"
+      - "`--interactive` or `-i` forces interactive mode"
+      - "Zero arguments implies interactive mode"
+      - "Otherwise run batch/command mode"
+
+  cli_contract:
+    executable:
+      canonical_name: "ekippx-cli"
+      signature: "ekippx [OPTIONS] [INPUT_FILE] [OUTPUT_FILE]"
+    positional_arguments:
+      - name: "INPUT_FILE"
+        required: false
+        repeatable: false
+        description: "Source file to preprocess; omitted in interactive mode or when reading stdin explicitly"
+      - name: "OUTPUT_FILE"
+        required: false
+        repeatable: false
+        description: "Destination file for emitted output; defaults to stdout"
+    core_options:
+      - short_name: "-h"
+        long_name: "--help"
+        value_name: ""
+        takes_value: false
+        description: "Show help and exit"
+      - short_name: "-V"
+        long_name: "--version"
+        value_name: ""
+        takes_value: false
+        description: "Show version and exit"
+      - short_name: "-i"
+        long_name: "--interactive"
+        value_name: ""
+        takes_value: false
+        description: "Force REPL mode"
+      - short_name: "-e"
+        long_name: "--eval"
+        value_name: "TEXT"
+        takes_value: true
+        description: "Expand literal input text without reading a source file"
+      - short_name: "-"
+        long_name: "--stdin"
+        value_name: ""
+        takes_value: false
+        description: "Read primary input from stdin"
+      - short_name: "-o"
+        long_name: "--output"
+        value_name: "FILE"
+        takes_value: true
+        description: "Write output to file instead of stdout"
+    batteries_options:
+      - short_name: "-I"
+        long_name: "--include-path"
+        value_name: "PATH"
+        takes_value: true
+        repeatable: true
+        description: "Append an include search path"
+      - short_name: "-D"
+        long_name: "--define"
+        value_name: "NAME[=VALUE]"
+        takes_value: true
+        repeatable: true
+        description: "Predefine a macro or config-visible symbol"
+      - short_name: "-U"
+        long_name: "--undef"
+        value_name: "NAME"
+        takes_value: true
+        repeatable: true
+        description: "Undefine a macro or symbol"
+      - short_name: "-c"
+        long_name: "--config"
+        value_name: "KEY=VALUE"
+        takes_value: true
+        repeatable: true
+        description: "Apply a runtime configuration override"
+      - short_name: ""
+        long_name: "--config-file"
+        value_name: "FILE"
+        takes_value: true
+        description: "Load configuration from file"
+      - short_name: ""
+        long_name: "--strict"
+        value_name: ""
+        takes_value: false
+        description: "Enable strict processing/diagnostic behavior"
+      - short_name: ""
+        long_name: "--check"
+        value_name: ""
+        takes_value: false
+        description: "Parse and validate input without producing final output"
+      - short_name: ""
+        long_name: "--dump-tokens"
+        value_name: ""
+        takes_value: false
+        description: "Dump token stream"
+      - short_name: ""
+        long_name: "--dump-ast"
+        value_name: ""
+        takes_value: false
+        description: "Dump parsed AST"
+      - short_name: ""
+        long_name: "--dump-config"
+        value_name: ""
+        takes_value: false
+        description: "Dump effective runtime configuration"
+    repl_options:
+      - short_name: ""
+        long_name: "--repl-history"
+        value_name: "FILE"
+        takes_value: true
+        description: "History file for interactive sessions"
+      - short_name: ""
+        long_name: "--repl-no-history"
+        value_name: ""
+        takes_value: false
+        description: "Disable history load/save"
+      - short_name: ""
+        long_name: "--repl-syntax"
+        value_name: "FILE"
+        takes_value: true
+        description: "Override syntax definition file; defaults to EkippX.syntax"
+      - short_name: ""
+        long_name: "--repl-no-banner"
+        value_name: ""
+        takes_value: false
+        description: "Suppress startup banner in interactive mode"
+    diagnostics_options:
+      - short_name: "-q"
+        long_name: "--quiet"
+        value_name: ""
+        takes_value: false
+        description: "Reduce non-essential output"
+      - short_name: "-v"
+        long_name: "--verbose"
+        value_name: ""
+        takes_value: false
+        description: "Increase diagnostic output"
+      - short_name: ""
+        long_name: "--color"
+        value_name: "WHEN"
+        takes_value: true
+        description: "Set color mode: auto, always, never"
+      - short_name: ""
+        long_name: "--trace"
+        related_options: ["--trace-file", "--trace-format", "--dump-symtbl", "--symtbl-format"]
+        value_name: ""
+        takes_value: false
+        description: "Enable execution tracing"
+      - short_name: ""
+        long_name: "--install-addon"
+        value_name: ""
+        takes_value: true
+        description: "Installs an addon to $EKIPPX_HOME"
+      - short_name: ""
+        long_name: "--bundle-addon"
+        value_name: ""
+        takes_value: true
+        description: "Takes a directory and uses MANIFEST file to bundle it into an addon"
+        
+
+  callback_types:
+    - name: "CommandHandler"
+      signature: "std::function<RunResult(const CLIConfig&)>"
+    - name: "ReplBinder"
+      signature: "std::function<void(PikoRL::REPL&, ekippx::Context&)>"
+      notes:
+        - "Used to inject EkippX host functions into the PikoRL REPL"
+        - "Maps naturally to `bind_api()` in `PikoRL.hpp:253`"
+    - name: "ExitCodeMapper"
+      signature: "std::function<ExitCodeInt(const std::exception&)>"
+
+  classes:
+    - name: "ArgumentParser"
+      role: "Parses argv into CLIConfig and command intent"
+      methods:
+        - "ParseCLIResult parse(int argc, char** argv) const"
+        - "String usage() const"
+        - "String version_text() const"
+        - "bool wants_repl(int argc, char** argv) const"
+      notes:
+        - "REPL decision honors the explicit interactive launch rules"
+        - "Batch and interactive modes are chosen before runtime execution"
+
+    - name: "CLIApplication"
+      role: "Top-level command-line façade over EkippX batteries and REPL support"
+      methods:
+        - "RunResult run(int argc, char** argv)"
+        - "RunResult run(const CLIConfig& config)"
+        - "RunResult run_batch(const CLIConfig& config)"
+        - "RunResult run_repl(const CLIConfig& config)"
+        - "ExitCodeInt run_main(int argc, char** argv)"
+        - "ekippx::Context& context()"
+        - "const ekippx::Context& context() const"
+      notes:
+        - "Owns or orchestrates the EkippX processing context"
+        - "Uses EkippX-Batteries.hpp to populate builtins and behavior"
+        - "Delegates interactive loop execution to PikoRL"
+
+    - name: "BatteriesBootstrap"
+      role: "Applies the batteries layer to a CLI-owned EkippX context"
+      methods:
+        - "void install(ekippx::Context& ctx)"
+        - "void install_default_directives(ekippx::Context& ctx)"
+        - "void install_default_functions(ekippx::Context& ctx)"
+        - "void install_default_expanders(ekippx::Context& ctx)"
+        - "void install_default_conditionals(ekippx::Context& ctx)"
+      notes:
+        - "Represents the boundary where the CLI turns batteries into a usable preprocessor application"
+
+    - name: "ReplSession"
+      role: "Adapter between EkippX runtime/context and PikoRL REPL services"
+      fields:
+        - { name: "syntax_file", type: "Path" }
+        - { name: "config", type: "ReplConfig" }
+      methods:
+        - "void configure(PikoRL::REPL& repl, ekippx::Context& ctx)"
+        - "void bind_host_api(PikoRL::REPL& repl, ekippx::Context& ctx)"
+        - "void load_syntax(Path file)"
+        - "RunResult run(ekippx::Context& ctx)"
+      notes:
+        - "Uses `PikoRL::REPL` as the underlying interactive shell type"
+        - "Binds expansion, directive, config, and diagnostics helpers into the REPL"
+        - "Defaults syntax highlighting/presentation to `EkippX.syntax`"
+
+    - name: "ExitCodePolicy"
+      role: "Maps runtime failures to process exit statuses"
+      methods:
+        - "ExitCode classify(const std::exception& ex) const"
+        - "int to_native(ExitCode code) const"
+
+  free_functions:
+    - name: "make_default_cli_config"
+      signature: "CLIConfig make_default_cli_config()"
+    - name: "parse_cli"
+      signature: "ParseCLIResult parse_cli(int argc, char** argv)"
+    - name: "should_launch_repl"
+      signature: "bool should_launch_repl(int argc, char** argv)"
+    - name: "run_cli"
+      signature: "RunResult run_cli(int argc, char** argv)"
+    - name: "run_batch"
+      signature: "RunResult run_batch(const CLIConfig& config)"
+    - name: "run_repl"
+      signature: "RunResult run_repl(const CLIConfig& config)"
+    - name: "attach_batteries"
+      signature: "void attach_batteries(ekippx::Context& ctx)"
+    - name: "attach_repl_api"
+      signature: "void attach_repl_api(PikoRL::REPL& repl, ekippx::Context& ctx)"
+    - name: "default_syntax_file"
+      signature: "Path default_syntax_file()"
+    - name: "default_history_file"
+      signature: "Path default_history_file()"
+
+  execution_model:
+    startup_sequence:
+      - "Parse argv"
+      - "Resolve help/version short-circuits"
+      - "Determine launch mode"
+      - "Construct EkippX runtime/context"
+      - "Install batteries into the runtime"
+      - "Apply config files, env, and command-line overrides"
+      - "Run batch mode or interactive mode"
+    batch_mode:
+      description: >
+        Batch mode preprocesses input from file, stdin, or literal text and writes
+        output or diagnostics according to CLIConfig.
+      operations:
+        - "load input"
+        - "lex/parse/expand using batteries-backed runtime"
+        - "emit output"
+        - "return mapped exit code"
+    interactive_mode:
+      description: >
+        Interactive mode creates a PikoRL-based shell, binds EkippX commands and
+        expansion helpers, loads syntax presentation data, and enters the REPL loop.
+      observed_pikorl_facts:
+        - "`PikoRL::REPL::run()` starts the loop in `PikoRL.hpp:118`"
+        - "`bind_api()` is available for host function injection in `PikoRL.hpp:253`"
+
+  repl_integration:
+    backend:
+      type: "PikoRL::REPL"
+      source_reference:
+        - "`PikoRL.hpp:67`"
+        - "`PikoRL.hpp:118`"
+        - "`PikoRL.hpp:253`"
+    responsibilities:
+      - "line-oriented interactive loop"
+      - "host API binding"
+      - "history and prompt behavior"
+      - "surface-level syntax presentation"
+    ekippx_bindings:
+      examples:
+        - "expand(text)"
+        - "define(name, body)"
+        - "undef(name)"
+        - "set_config(key, value)"
+        - "show_config()"
+        - "dump_symbols()"
+        - "load(file)"
+        - "help(topic)"
+    syntax_support:
+      default_file: "EkippX.syntax"
+      purpose:
+        - "syntax highlighting"
+        - "token-class presentation"
+        - "interactive editing/readability support"
+      note: >
+        `EkippX.syntax` is part of the CLI/REPL experience contract even if it is
+        not itself a C++ header API type.
+
+  environment:
+    variables:
+      - name: "EKIPPX_INCLUDE_PATH"
+        purpose: "Additional include path list"
+      - name: "EKIPPX_CONFIG"
+        purpose: "Inline configuration overrides"
+      - name: "EKIPPX_CONFIG_FILE"
+        purpose: "Default config file path"
+      - name: "EKIPPX_STRICT"
+        purpose: "Strict-mode toggle"
+      - name: "EKIPPX_REPL_HISTORY"
+        purpose: "Override REPL history file"
+      - name: "EKIPPX_SYNTAX_FILE"
+        purpose: "Override syntax definition file for REPL/editor integration"
+
+  exit_codes:
+    mapping:
+      success: 0
+      usage_error: 1
+      config_error: 2
+      input_error: 3
+      parse_error: 4
+      runtime_error: 5
+      io_error: 6
+      internal_error: 7
+
+  usage_examples:
+    - name: "launch_repl_by_default"
+      command: "ekippx"
+      effect: "Starts the interactive REPL because no arguments were supplied"
+
+    - name: "force_repl"
+      command: "ekippx --interactive"
+      effect: "Starts the interactive REPL explicitly"
+
+    - name: "force_repl_short"
+      command: "ekippx -i"
+      effect: "Starts the interactive REPL explicitly"
+
+    - name: "expand_file"
+      command: "ekippx input.ekx output.txt"
+      effect: "Runs batch preprocessing from file to file"
+
+    - name: "expand_stdin"
+      command: "ekippx --stdin -o output.txt"
+      effect: "Reads primary source from stdin and writes to file"
+
+    - name: "literal_eval"
+      command: "ekippx --eval '@emitln(Hello)'"
+      effect: "Expands literal text without entering REPL"
+
+    - name: "dump_ast"
+      command: "ekippx --dump-ast input.ekx"
+      effect: "Parses source and emits AST representation"
+
+    - name: "custom_syntax"
+      command: "ekippx -i --repl-syntax ./EkippX.syntax"
+      effect: "Launches REPL with explicit syntax definition file"
+
+  file_layout_expectations:
+    primary_header: "EkippX-CLI.hpp"
+    companion_headers:
+      - "EkippX-Batteries.hpp"
+      - "EkippX.hpp"
+      - "PikoRL.hpp"
+    companion_assets:
+      - "EkippX.syntax"
+    guarantee:
+      - "Including EkippX-CLI.hpp is sufficient for embedding the CLI façade"
+      - "Interactive mode additionally relies on PikoRL availability"
+      - "Syntax presentation defaults to EkippX.syntax when present"
+
+  compatibility:
+    relation_to_batteries:
+      - "EkippX-CLI.hpp is an application-facing layer over EkippX-Batteries.hpp"
+      - "It does not redefine preprocessing semantics; it exposes them as command-line behavior"
+    relation_to_pikorl:
+      - "PikoRL is the REPL backend, not the semantic engine"
+      - "Tightened baseline embeds PikoRL as a header-only REPL and binds ekippx_expand, ekippx_trace, and ekippx_symbols host APIs."
+      - "Host APIs are injected into the REPL through binder/adaptor functions"
+    source_compatibility:
+      guaranteed: false
+    abi_compatibility:
+      guaranteed: false
+
+  notes:
+    - "This manifest intentionally models only EkippX-CLI.hpp."
+    - "The CLI is a batteries-backed executable façade, not a separate semantic engine."
+    - "The REPL launches only when no arguments are passed or when `--interactive`/`-i` is supplied."
+    - "PikoRL provides the interactive shell substrate."
+    - "`EkippX.syntax` is part of the REPL-facing experience and should be documented alongside the CLI."

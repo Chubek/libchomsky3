@@ -1,0 +1,7 @@
+prefix=/usr
+includedir=${prefix}/include
+
+Name: zethadb
+Description: Header-only in-memory and on-disk schema-based database for C++
+Version: 0.1.0
+Cflags: -I${includedir}

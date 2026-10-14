@@ -1,0 +1,20 @@
+{
+  "name": "cli-fixture",
+  "version": "0.1.0",
+  "description": "CLI package fixture",
+  "author": "Jiterati Project",
+  "license": "MIT",
+  "homepage": "https://example.invalid/jiterati",
+  "dependencies": [],
+  "plugins": ["FixturePlugin"],
+  "passes": ["FixturePass"],
+  "backends": ["FixtureBackend"],
+  "files": [
+    "META-INF/manifest.json",
+    "Plugin/fixture.txt",
+    "Pass/fixture.txt",
+    "BE/fixture.txt",
+    "Docs/readme.md",
+    "Examples/example.ir"
+  ]
+}

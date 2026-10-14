@@ -1,0 +1,3 @@
+@defsym(target, 123)
+@alias(alias_target, target)
+@emitln(alias_target)

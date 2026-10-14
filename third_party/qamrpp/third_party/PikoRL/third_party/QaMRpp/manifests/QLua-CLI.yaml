@@ -1,0 +1,4 @@
+$name: QLua-CLI
+$description: The CLI for QLua.cpp, the more sophistiacted interface for QaMRpp
+$version: 1.0.0
+$schema: "gerdoo://QaMRpp/QLua-CLI!JSON"

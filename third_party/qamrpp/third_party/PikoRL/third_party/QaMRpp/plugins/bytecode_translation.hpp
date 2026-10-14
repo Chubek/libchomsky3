@@ -1,0 +1,6 @@
+#ifndef QAMRPP_PLUGIN_BYTECODE_TRANSLATION_HPP
+#define QAMRPP_PLUGIN_BYTECODE_TRANSLATION_HPP
+
+#include "QaMRpp-Compile2Bytecode.hpp"
+
+#endif

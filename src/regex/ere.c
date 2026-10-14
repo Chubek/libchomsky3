@@ -369,6 +369,7 @@ static chomsky3_regex_node_t *parse_char_class(ere_parser_t *p, size_t start_pos
                 case 't': lo = '\t'; break;
                 case 'f': lo = '\f'; break;
                 case 'v': lo = '\v'; break;
+                case '0': lo = 0; break;
                 case 'x': {
                     uint32_t value = 0;
                     int digits = 0;
@@ -408,7 +409,39 @@ static chomsky3_regex_node_t *parse_char_class(ere_parser_t *p, size_t start_pos
                     parse_fail(p, CHOMSKY3_ERROR_PARSE_UNEXPECTED_END, start_pos);
                     goto fail;
                 }
-                hi = (uint32_t)esc;
+                switch (esc) {
+                    case 'n': hi = '\n'; break;
+                    case 'r': hi = '\r'; break;
+                    case 't': hi = '\t'; break;
+                    case 'f': hi = '\f'; break;
+                    case 'v': hi = '\v'; break;
+                    case '0': hi = 0; break;
+                    case 'x': {
+                        uint32_t value = 0;
+                        int digits = 0;
+                        while (digits < 2) {
+                            int h = peek(p);
+                            int d;
+                            if (h >= '0' && h <= '9') d = h - '0';
+                            else if (h >= 'a' && h <= 'f') d = h - 'a' + 10;
+                            else if (h >= 'A' && h <= 'F') d = h - 'A' + 10;
+                            else break;
+                            value = value * 16u + (uint32_t)d;
+                            advance(p);
+                            digits++;
+                        }
+                        if (digits == 0) {
+                            parse_fail(p, CHOMSKY3_ERROR_PARSE_INVALID_ESCAPE, start_pos);
+                            goto fail;
+                        }
+                        hi = value;
+                        break;
+                    }
+                    case 'd': case 'D': case 'w': case 'W': case 's': case 'S':
+                        parse_fail(p, CHOMSKY3_ERROR_PARSE_INVALID_RANGE, start_pos);
+                        goto fail;
+                    default: hi = (uint32_t)esc; break;
+                }
             } else {
                 hi = (uint32_t)advance(p);
             }

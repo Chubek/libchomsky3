@@ -1,0 +1,50 @@
+schema_version: 1
+abi_version: 1
+loading:
+  discovery_paths:
+    - "$JITERATI_HOME/plugins"
+    - "package:/Plugin"
+  version_negotiation: "loader selects plugins with compatible abi_version and rejects unknown required capabilities"
+  compatibility_rules:
+    - "major ABI versions must match"
+    - "minor plugin versions may add optional capabilities"
+    - "missing required exported symbols are fatal"
+plugins:
+  - name: BURSISel
+    version: 0.1.0
+    description: Bottom-up rewrite-system instruction selection plugin.
+    author: Jiterati Project
+    abi_version: 1
+    exported_symbols: [jiterati_plugin_init, jiterati_plugin_shutdown]
+    initialization: registers an instruction-selection strategy
+    shutdown: releases plugin-owned tables and unregisters hooks
+    dependencies: []
+    configurable_options:
+      - { name: trace, type: bool, default: false, description: emit selection trace diagnostics }
+    capabilities: [instruction_selection]
+    extension_points: [backend.isel]
+  - name: MaxMunchISel
+    version: 0.1.0
+    description: Maximal-munch instruction selection plugin.
+    author: Jiterati Project
+    abi_version: 1
+    exported_symbols: [jiterati_plugin_init, jiterati_plugin_shutdown]
+    initialization: registers greedy tree-pattern selection
+    shutdown: unregisters selection hooks
+    dependencies: []
+    configurable_options: []
+    capabilities: [instruction_selection]
+    extension_points: [backend.isel]
+  - name: ListISched
+    version: 0.1.0
+    description: List scheduler plugin for backend instruction scheduling experiments.
+    author: Jiterati Project
+    abi_version: 1
+    exported_symbols: [jiterati_plugin_init, jiterati_plugin_shutdown]
+    initialization: registers scheduling pass factory
+    shutdown: unregisters scheduling pass factory
+    dependencies: []
+    configurable_options:
+      - { name: deterministic, type: bool, default: true, description: use stable tie-breaking }
+    capabilities: [instruction_scheduling]
+    extension_points: [backend.scheduler]

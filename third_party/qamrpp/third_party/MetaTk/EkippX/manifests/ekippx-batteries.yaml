@@ -1,0 +1,857 @@
+PluginAPI:
+  summary: "Extends EkippX with dynamically loaded or statically registered plugins."
+  plugin_kinds:
+    - "AtomicPlugin"
+    - "DirectivePlugin"
+    - "FunctionPlugin"
+    - "ExpanderPlugin"
+    - "ConditionalPlugin"
+    - "HookPlugin"
+  lifecycle:
+    - "Discover plugins from configured search paths"
+    - "Load plugin metadata"
+    - "Register exported atomics, directives, functions, expanders, and hooks"
+    - "Initialize plugin state"
+    - "Shutdown plugins in reverse registration order"
+  search_paths:
+    - "$HOME/.ekippx/plugins"
+    - "/usr/local/lib/ekippx/plugins"
+    - "$ENV{EKIPPX_PLUGIN_PATH}"
+  safety:
+    - "Plugins may be disabled globally in strict or sandboxed runs"
+    - "Atomic plugins may alter lexing or token flow"
+    - "Directive/function/expander plugins must declare names before registration"
+  builtins:
+    - name: "AtomicPlugin"
+      desc: "A low-level plugin that can consume, inject, or transform token stream items atomically"
+    - name: "HookPlugin"
+      desc: "A plugin that subscribes to runtime events such as file include, macro define, and diagnostics"
+Hooks:
+  events:
+    - name: "OnStartup"
+      desc: "Triggered before the main input is read"
+    - name: "OnShutdown"
+      desc: "Triggered before process exit"
+    - name: "OnBeforeInclude"
+      desc: "Triggered before include resolution"
+    - name: "OnAfterInclude"
+      desc: "Triggered after include completion"
+    - name: "OnDefine"
+      desc: "Triggered after macro creation"
+    - name: "OnDefsym"
+      desc: "Triggered after symbol creation"
+    - name: "OnUndef"
+      desc: "Triggered after macro or symbol removal"
+    - name: "OnEmit"
+      desc: "Triggered before text is emitted"
+    - name: "OnError"
+      desc: "Triggered when a fatal diagnostic is raised"
+    - name: "OnWarning"
+      desc: "Triggered when a warning diagnostic is raised"
+    - name: "OnScopePush"
+      desc: "Triggered after a new scope is created"
+    - name: "OnScopePop"
+      desc: "Triggered before a scope is destroyed"
+SecurityModel:
+  modes:
+    - name: "normal"
+      desc: "Default execution model with user-enabled shell and plugins"
+    - name: "strict"
+      desc: "Warnings may become errors and undefined access is more likely to fail"
+    - name: "sandbox"
+      desc: "Disables shell, file writes, and external plugins unless explicitly allowed"
+    - name: "hermetic"
+      desc: "Ignores ambient environment except explicitly passed symbols and config"
+  restricted_features:
+    - "shell"
+    - "writefile"
+    - "appendfile"
+    - "loadconfig"
+    - "plugin loading"
+    - "arbitrary include outside allowed roots"
+  policies:
+    - "AllowListPaths"
+    - "DenyListPaths"
+    - "AllowEnv"
+    - "DenyEnv"
+    - "AllowPlugins"
+    - "DenyPlugins"
+StandardLibrary:
+  modules:
+    - name: "std/core"
+      desc: "Basic helpers, diagnostics, and compatibility aliases"
+    - name: "std/path"
+      desc: "Portable path manipulation helpers"
+    - name: "std/text"
+      desc: "String and list manipulation helpers"
+    - name: "std/assert"
+      desc: "Reusable assertion macros"
+    - name: "std/env"
+      desc: "Environment normalization helpers"
+    - name: "std/math"
+      desc: "Numeric helper macros and wrappers"
+    - name: "std/compat"
+      desc: "Compatibility aliases for older EkippX dialects"
+  loading:
+    automatic: false
+    config_key: "AutoUseStdlib"
+    directive: "usestd"
+Directives:
+  - name: "alias"
+    type: "Directive"
+    params:
+      - NewName: "Mandatory"
+      - ExistingName: "Mandatory"
+    summary: "Creates an alias to a directive, function, macro, or expander name"
+    variants:
+      - name: "unalias"
+        params:
+          - Name: "Mandatory"
+        differs: "Removes a previously created alias"
+    usage: >
+      @alias(`PRINT`, `emitln`) @unalias(`PRINT`)
+
+  - name: "require"
+    type: "Directive"
+    params:
+      - Feature: "Mandatory"
+      - FailureAction: "Optional"
+    summary: "Requires a capability, plugin, configuration key, or stdlib module to exist"
+    variants:
+      - name: "requireplugin"
+        params:
+          - PluginName: "Mandatory"
+        differs: "Requires a plugin to be loaded"
+      - name: "requireconfig"
+        params:
+          - Key: "Mandatory"
+        differs: "Requires a configuration key to be set"
+    usage: >
+      @require(`shell`) @requireplugin(`brk`) @requireconfig(`AllowShell`)
+
+  - name: "plugin"
+    type: "Directive"
+    params:
+      - PluginName: "Mandatory"
+      - Arguments: "Optional, variadic"
+    summary: "Loads or configures a plugin"
+    variants:
+      - name: "unplugin"
+        params:
+          - PluginName: "Mandatory"
+        differs: "Unloads a plugin if the implementation allows it"
+      - name: "pluginpath"
+        params:
+          - Path: "Mandatory"
+        differs: "Adds a plugin search path"
+    usage: >
+      @plugin(`brk`) @pluginpath(`$HOME/.ekippx/plugins`)
+
+  - name: "tracepush"
+    type: "Directive"
+    params:
+      - Label: "Optional"
+    summary: "Pass-1 tightened runtime exposes tracepoint markers and structured trace event serialization; tracepush/tracepop remain manifest-level future frame controls"
+    variants:
+      - name: "tracepop"
+        differs: "Pops the most recent trace frame"
+      - name: "tracepoint"
+        params:
+          - Label: "Mandatory"
+        differs: "Emits a trace marker"
+    usage: >
+      @tracepush(`init`) @tracepoint(`after include`) @tracepop()
+
+  - name: "memoize"
+    type: "Directive"
+    params:
+      - MacroName: "Mandatory"
+    summary: "Marks a macro as cacheable by argument tuple"
+    variants:
+      - name: "unmemoize"
+        params:
+          - MacroName: "Mandatory"
+        differs: "Removes memoization behavior from a macro"
+      - name: "clearcache"
+        params:
+          - CacheName: "Optional"
+        differs: "Clears one or all runtime caches"
+    usage: >
+      @memoize(`EXPENSIVE_MACRO`) @clearcache()
+
+  - name: "freeze"
+    type: "Directive"
+    params:
+      - Name: "Mandatory"
+    summary: "Prevents further mutation of a macro, symbol, or config key"
+    variants:
+      - name: "thaw"
+        params:
+          - Name: "Mandatory"
+        differs: "Re-enables mutation if policy allows it"
+    usage: >
+      @freeze(`TargetArch`)
+
+  - name: "pushoutput"
+    type: "Directive"
+    params:
+      - Target: "Mandatory"
+    summary: "Redirects emitted output to a named sink or file"
+    variants:
+      - name: "popoutput"
+        differs: "Restores the previous output sink"
+      - name: "teeoutput"
+        params:
+          - Target: "Mandatory"
+        differs: "Duplicates emitted output to an additional sink"
+    usage: >
+      @pushoutput(`build.log`) @emitln(`hello`) @popoutput()
+
+  - name: "chdir"
+    type: "Directive"
+    params:
+      - Path: "Mandatory"
+    summary: "Changes the working directory for subsequent relative file operations"
+    variants:
+      - name: "pushdir"
+        params:
+          - Path: "Mandatory"
+        differs: "Changes directory and saves the previous one"
+      - name: "popdir"
+        differs: "Restores the previous working directory"
+    usage: >
+      @pushdir(`src`) @include(`main.eki`) @popdir()
+
+  - name: "defer"
+    type: "Directive"
+    params:
+      - Body: "Mandatory"
+    summary: "Schedules body to run when the current scope or file ends"
+    usage: >
+      @defer(`@emitln(`done`)`)
+
+  - name: "profile"
+    type: "Directive"
+    params:
+      - Label: "Optional"
+    summary: "Begins a profiling region"
+    variants:
+      - name: "endprofile"
+        differs: "Ends the current profiling region"
+      - name: "profiledump"
+        differs: "Emits collected profile information"
+    usage: >
+      @profile(`parse-step`) @endprofile() @profiledump()
+
+  - name: "usestd"
+    type: "Directive"
+    params:
+      - Module: "Mandatory"
+    summary: "Loads a standard library module"
+    usage: >
+      @usestd(`std/text`)
+
+  - name: "counter"
+    type: "Directive"
+    params:
+      - Name: "Mandatory"
+      - InitialValue: "Optional, defaults to 0"
+    summary: "Creates or resets a named counter"
+    variants:
+      - name: "inc"
+        params:
+          - Name: "Mandatory"
+          - Amount: "Optional, defaults to 1"
+        differs: "Increments a named counter"
+      - name: "dec"
+        params:
+          - Name: "Mandatory"
+          - Amount: "Optional, defaults to 1"
+        differs: "Decrements a named counter"
+    usage: >
+      @counter(`build_no`, 100) @inc(`build_no`)
+
+Functions:
+  - name: "abs"
+    type: "Function"
+    params:
+      - Value: "Mandatory"
+    summary: "Returns absolute numeric value"
+    usage: >
+      &abs(-10)
+
+  - name: "min"
+    type: "Function"
+    params:
+      - Values: "Mandatory, variadic"
+    summary: "Returns the smallest numeric value"
+    variants:
+      - name: "max"
+        differs: "Returns the largest numeric value"
+    usage: >
+      &min(4, 1, 7)
+
+  - name: "clamp"
+    type: "Function"
+    params:
+      - Value: "Mandatory"
+      - Lower: "Mandatory"
+      - Upper: "Mandatory"
+    summary: "Constrains a number to a range"
+    usage: >
+      &clamp(20, 0, 10)
+
+  - name: "uuid"
+    type: "Function"
+    params: []
+    summary: "Returns a generated UUID string"
+    usage: >
+      &uuid()
+
+  - name: "timestamp"
+    type: "Function"
+    params:
+      - Format: "Optional"
+    summary: "Returns current timestamp in implementation default or requested format"
+    usage: >
+      &timestamp(`unix`)
+
+  - name: "hash"
+    type: "Function"
+    params:
+      - Algorithm: "Mandatory"
+      - Value: "Mandatory"
+    summary: "Returns a digest of the input value"
+    variants:
+      - name: "checksum"
+        differs: "Returns a lightweight implementation-defined checksum"
+    usage: >
+      &hash(`sha256`, `hello`)
+
+  - name: "jsonEncode"
+    type: "Function"
+    params:
+      - Value: "Mandatory"
+    summary: "Encodes a value as JSON text"
+    variants:
+      - name: "jsonDecode"
+        differs: "Parses JSON text into implementation-native data representation"
+    usage: >
+      &jsonEncode(`hello`)
+
+  - name: "csvsplit"
+    type: "Function"
+    params:
+      - Value: "Mandatory"
+    summary: "Splits a CSV record honoring quoted fields"
+    variants:
+      - name: "csvjoin"
+        differs: "Joins a list into a CSV record"
+    usage: >
+      &csvsplit(`a,\"b,c\",d`)
+
+  - name: "padLeft"
+    type: "Function"
+    params:
+      - Value: "Mandatory"
+      - Width: "Mandatory"
+      - Fill: "Optional, default space"
+    summary: "Pads a string on the left"
+    variants:
+      - name: "padRight"
+        differs: "Pads a string on the right"
+      - name: "center"
+        differs: "Centers a string in a field"
+    usage: >
+      &padLeft(`7`, 3, `0`)
+
+  - name: "repeatText"
+    type: "Function"
+    params:
+      - Value: "Mandatory"
+      - Count: "Mandatory"
+    summary: "Repeats text Count times"
+    usage: >
+      &repeatText(`ab`, 3)
+
+  - name: "envget"
+    type: "Function"
+    params:
+      - Name: "Mandatory"
+      - Default: "Optional"
+    summary: "Returns an environment variable with optional default"
+    variants:
+      - name: "envhas"
+        differs: "Returns whether an environment variable exists"
+    usage: >
+      &envget(`HOME`, `/tmp`)
+
+  - name: "counterValue"
+    type: "Function"
+    params:
+      - Name: "Mandatory"
+    summary: "Returns the current value of a named counter"
+    usage: >
+      &counterValue(`build_no`)
+
+  - name: "sleep"
+    type: "Function"
+    params:
+      - Milliseconds: "Mandatory"
+    summary: "Pauses execution for a short duration if allowed by policy"
+    usage: >
+      &sleep(50)
+
+Expanders:
+  - name: "CONFIG"
+    desc: "Gets a runtime configuration value by key"
+    syntax: "$CONFIG{StrictMode}"
+    missing_behavior: "Returns empty string unless strict config resolution is enabled"
+  - name: "META"
+    desc: "Gets metadata values from the active manifest or translation unit"
+    syntax: "$META{Author}"
+  - name: "RANDOM"
+    desc: "Produces a random integer or token"
+    syntax: "$RANDOM{0,100}"
+  - name: "UUID"
+    desc: "Produces a generated UUID"
+    syntax: "$UUID{}"
+  - name: "COUNTER"
+    desc: "Gets the value of a named runtime counter"
+    syntax: "$COUNTER{build_no}"
+  - name: "CACHE"
+    desc: "Retrieves a cached value by cache and key"
+    syntax: "$CACHE{macro_cache;PRINT_ALL_ARGS}"
+  - name: "PLUGIN"
+    desc: "Queries a plugin-provided virtual namespace"
+    syntax: "$PLUGIN{brk;enabled}"
+  - name: "DATE"
+    desc: "Returns formatted date or time information"
+    syntax: "$DATE{unix}"
+Conditionals:
+  - name: "IfContains?"
+    desc: "Checks whether Left contains Right as substring"
+  - name: "IfStartsWith?"
+    desc: "Checks whether Left begins with Right"
+  - name: "IfEndsWith?"
+    desc: "Checks whether Left ends with Right"
+  - name: "IfIn?"
+    desc: "Checks whether a value appears in a list or set"
+  - name: "IfType?"
+    desc: "Checks whether a value has the requested runtime type"
+  - name: "IfPluginLoaded?"
+    desc: "Checks whether a plugin is currently loaded"
+  - name: "IfConfig?"
+    desc: "Checks whether a configuration key is set"
+Operators:
+  string:
+    - "IN"
+    - "NOTIN"
+    - "LIKE"
+    - "ILIKE"
+    - "REGEX"
+    - "NREGEX"
+  set:
+    - "SUBSET"
+    - "SUPERSET"
+    - "INTERSECTS"
+  filesystem:
+    - "EXISTS"
+    - "ISFILE"
+    - "ISDIR"
+ConfigurationKeys:
+  - key: "QuoteLeft"
+    value: "String"
+    desc: "Left delimiter for forced-unexpanded quoting"
+  - key: "QuoteRight"
+    value: "String"
+    desc: "Right delimiter for forced-unexpanded quoting"
+  - key: "FunctionSigil"
+    value: "String"
+    desc: "Sigil that starts function invocations"
+  - key: "DirectiveSigil"
+    value: "String"
+    desc: "Sigil that starts directives"
+  - key: "ExpanderSigil"
+    value: "String"
+    desc: "Sigil that starts expanders"
+  - key: "ArgumentSeparator"
+    value: "String"
+    desc: "Separator between directive and function arguments"
+  - key: "AllArgsSeparator"
+    value: "String"
+    desc: "Separator used by the all-arguments expansion form"
+  - key: "SEPARATOR"
+    value: "String"
+    desc: "General configured separator used by list-like operations"
+  - key: "AutoUseStdlib"
+    value: "Boolean"
+    desc: "Automatically loads selected standard library modules"
+  - key: "AllowPluginLoad"
+    value: "Boolean"
+    desc: "Allows runtime loading of plugins"
+  - key: "SandboxMode"
+    value: "Boolean"
+    desc: "Restricts shell, file writes, and plugin loading"
+  - key: "AllowWriteFiles"
+    value: "Boolean"
+    desc: "Allows writefile and appendfile operations"
+  - key: "AllowDirectoryChange"
+    value: "Boolean"
+    desc: "Allows chdir, pushdir, and popdir"
+  - key: "TraceEnabled"
+    value: "Boolean"
+    desc: "Enables trace frame collection"
+  - key: "ProfileEnabled"
+    value: "Boolean"
+    desc: "Enables runtime profiling"
+  - key: "MaxArguments"
+    value: "Integer"
+    desc: "Maximum number of arguments accepted by a macro or call"
+  - key: "MaxOutputSize"
+    value: "Integer"
+    desc: "Maximum size of emitted output before abort"
+  - key: "MaxFileSize"
+    value: "Integer"
+    desc: "Maximum size of a readable input file"
+  - key: "EncodingFallback"
+    value: "String"
+    desc: "Fallback encoding when decoding input fails"
+  - key: "CommentLinePrefixes"
+    value: "List"
+    desc: "List of recognized line comment prefixes"
+  - key: "CommentBlockStart"
+    value: "String"
+    desc: "Block comment opening delimiter"
+  - key: "CommentBlockEnd"
+    value: "String"
+    desc: "Block comment closing delimiter"
+SpecialSymbols:
+  builtins:
+    - name: "CurrentScope"
+      desc: "Identifier of the current scope"
+    - name: "ScopeDepth"
+      desc: "Current nested scope depth"
+    - name: "TranslationUnit"
+      desc: "Stable identifier for the current preprocessing run"
+    - name: "OutputTarget"
+      desc: "Current output sink or file"
+    - name: "TraceDepth"
+      desc: "Current trace stack depth"
+    - name: "ProfileEnabled"
+      desc: "Whether runtime profiling is enabled"
+    - name: "StrictMode"
+      desc: "Current effective strictness mode"
+    - name: "PluginCount"
+      desc: "Number of loaded plugins"
+    - name: "LineEnding"
+      desc: "Current effective output newline mode"
+    - name: "CharacterEncoding"
+      desc: "Current effective text encoding"
+Diagnostics:
+  warning_kinds:
+    - "RedefinitionWarning"
+    - "ShadowedSymbol"
+    - "DeprecatedDirective"
+    - "DeprecatedFunction"
+    - "IgnoredConfigKey"
+    - "UnusedCapture"
+    - "UnreachableBranch"
+    - "PluginLoadFailure"
+    - "SandboxViolation"
+    - "PathTraversalAttempt"
+  notices:
+    - "TraceEvent"
+    - "ProfileEvent"
+    - "CacheHit"
+    - "CacheMiss"
+    - "ImplicitIncludePath"
+    - "ConfigLoaded"
+ExecutionModel:
+  internal_structures:
+    - "Token stream"
+    - "Hideset tracking"
+    - "Scope stack"
+    - "File stack"
+    - "Output sink stack"
+    - "Trace stack"
+    - "Plugin registry"
+    - "Cache tables"
+  cache_points:
+    - "Memoized macros"
+    - "Included file resolution"
+    - "Parsed config files"
+    - "Plugin capability queries"
+  failure_modes:
+    - "Lexing failure stops current translation unit"
+    - "Fatal diagnostics abort remaining work unless trapped by implementation-defined recovery"
+    - "Strict sandbox violations are fatal"
+Compatibility:
+  aliases:
+    - old: "sinclude"
+      new: "include"
+      mode: "compatible"
+    - old: "deflit"
+      new: "define"
+      mode: "compatible"
+    - old: "xdefsym"
+      new: "defsym"
+      mode: "compatible"
+  behavior_flags:
+    - "LegacyArgumentExpansion"
+    - "LegacyBacktickListRules"
+    - "LegacyCaseInsensitiveTruthiness"
+    - "LegacyIncludeFailureBehavior"
+Examples:
+  - title: "Plugin-assisted line breaking"
+    code: >
+      @plugin(`brk`) @emit(`one`)/brk this disappears @emitln(`two`)
+
+  - title: "Sandboxed run guard"
+    code: >
+      @if(`IfEq? $CONFIG{SandboxMode}, true`,
+
+          `@warning(`sandbox enabled`)`,
+          `@notice(`sandbox disabled`)`)
+  - title: "Memoized macro"
+    code: >
+      @define(`DOUBLE`, `&add($1, $1)`) @memoize(`DOUBLE`) &call(`DOUBLE`, 10)
+
+  - title: "Counter and profile"
+    code: >
+      @counter(`n`, 0) @profile(`counting`) @inc(`n`, 5) @emitln($COUNTER{n}) @endprofile()
+
+  - title: "Deferred cleanup"
+    code: >
+      @pushdir(`build`) @defer(`@popdir()`) @emitln($SYSVAR{CWD}) @emitln($SYSVAR{CWD})
+
+  - title: "Configuration loading with fallback"
+    code: >
+      @loadconfig() @if(`IfDefined? $ENV{CI}`,
+
+          `@config(`StrictMode`, `true`)`,
+          `@config(`StrictMode`, `false`)`)
+      @emitln(`Strict? $CONFIG{StrictMode}`)
+
+  - title: "Scoped export"
+    code: >
+      @pushscope() @defsym(TEMP_VALUE, `123`) @export(TEMP_VALUE) @popscope() @emitln($SYMBOL{TEMP_VALUE})
+
+  - title: "File stack inspection"
+    code: >
+      @pushfilestack(`src/main.eki`, `cpp`) @emitln($FILESTACK{0}) @popfilestack()
+
+  - title: "JSON roundtrip"
+    code: >
+      @capture(`DATA`, `&jsonEncode(`hello world`)`) @emitln($SYMBOL{DATA}) @emitln(&jsonDecode($SYMBOL{DATA}))
+
+  - title: "Path normalization"
+    code: >
+      @emitln(&normalizepath(`./src/../include/./header.eki`)) @emitln(&joinpath(`/tmp`, `ekippx`, `cache`))
+
+  - title: "Conditional plugin use"
+    code: >
+      @if(`IfPluginLoaded? brk`,
+
+          `@notice(`brk is loaded`)`,
+          `@plugin(`brk`)`)
+      @emitln(`plugin count = $SYSVAR{PluginCount}`)
+
+  - title: "Require a feature"
+    code: >
+      @require(`shell`, `&exitWithReason(`shell required`, true)`) @emitln(&shell(`printf ok`))
+
+  - title: "Output redirection"
+    code: >
+      @pushoutput(`build/output.txt`) @emitln(`generated file line`) @popoutput() @emitln(`done`)
+
+  - title: "Alias and unalias"
+    code: >
+      @alias(`SAY`, `emitln`) @SAY(`hello from alias`) @unalias(`SAY`)
+
+  - title: "Counter expansion"
+    code: >
+      @counter(`build`, 41) @inc(`build`) @emitln($COUNTER{build})
+
+  - title: "Tracing expansion"
+    code: >
+      @tracepush(`main`) @tracepoint(`before define`) @define(`HELLO`, `&echo hi`) @tracepoint(`after define`) @tracepop()
+
+Types:
+  - name: "Boolean"
+    desc: "A truth value recognized by EkippX truthiness rules"
+  - name: "Integer"
+    desc: "A whole numeric literal in decimal, binary, octal, or hexadecimal representation"
+  - name: "Float"
+    desc: "A floating-point numeric literal in fixed or scientific notation"
+  - name: "String"
+    desc: "A double-quoted value with interpolation and escape support"
+  - name: "LiteralString"
+    desc: "A single-quoted value with no interpolation and no escape processing"
+  - name: "Token"
+    desc: "A single unquoted lexical unit"
+  - name: "List"
+    desc: "A collection of values treated as an ordered sequence"
+  - name: "Map"
+    desc: "A collection of key-value pairs encoded in implementation-defined syntax"
+  - name: "Path"
+    desc: "A filesystem path, absolute or relative"
+  - name: "Identifier"
+    desc: "A valid macro, symbol, directive, function, or namespace name"
+  - name: "Regex"
+    desc: "A regular expression pattern when regex mode is enabled"
+  - name: "Glob"
+    desc: "A shell-style wildcard pattern when glob mode is enabled"
+  - name: "Character"
+    desc: "A single codepoint or implementation-defined single-character token"
+Grammar:
+  invocation_forms:
+    - form: "Directive"
+      syntax: "@name(arg1, arg2, ...)"
+    - form: "Function"
+      syntax: "&name(arg1, arg2, ...)"
+    - form: "Expander"
+      syntax: "$NAME{arg1, arg2, ...}"
+    - form: "Atomic"
+      syntax: "/name"
+  shorthand_forms:
+    - "$1"
+    - "$2"
+    - "$3"
+    - "$4"
+    - "$5"
+    - "$6"
+    - "$7"
+    - "$8"
+    - "$9"
+    - "$0"
+    - "$@"
+    - "$*"
+    - "$#"
+  grouping:
+    - "Round brackets are the default call delimiters for directives and functions"
+    - "Curly brackets are the default call delimiters for expanders"
+    - "Quote delimiters are configurable at runtime"
+  escaping:
+    - "Backslash may escape whitespace in tokens where enabled by implementation"
+    - "Double-quoted strings support escape sequences"
+    - "Single-quoted strings do not support escape sequences"
+    - "Forced-unexpanded quoting suppresses recursive expansion"
+Namespaces:
+  builtins:
+    - "global"
+    - "std"
+    - "sys"
+    - "plugin"
+  rules:
+    - "Symbols resolve in current scope before parent scopes"
+    - "Namespaced lookups may use implementation-defined separators"
+    - "Macros and symbols may share names if namespace class differs"
+    - "Directive and function names live in distinct dispatch tables"
+Caches:
+  - name: "MacroExpansionCache"
+    key: "Macro name + normalized argument tuple"
+    invalidation:
+      - "Macro redefinition"
+      - "Explicit @clearcache"
+      - "Scope destruction when cache is scope-local"
+  - name: "IncludeResolutionCache"
+    key: "Including file + requested path + include path set"
+    invalidation:
+      - "AddIncludePath changes"
+      - "Working directory changes"
+  - name: "ConfigParseCache"
+    key: "Configuration file path + modification stamp"
+    invalidation:
+      - "Config file content changes"
+      - "Explicit @loadconfig with reload option"
+  - name: "PluginQueryCache"
+    key: "Plugin name + queried capability"
+    invalidation:
+      - "Plugin load"
+      - "Plugin unload"
+ResourceLimits:
+  - name: "MaxRecursion"
+    default: 32
+    desc: "Maximum recursive evaluation depth"
+  - name: "MaxIncludeDepth"
+    default: 64
+    desc: "Maximum nested include depth"
+  - name: "MaxArguments"
+    default: 64
+    desc: "Maximum number of macro or function arguments"
+  - name: "MaxOutputSize"
+    default: "16 MiB"
+    desc: "Maximum emitted output size before abort"
+  - name: "MaxFileSize"
+    default: "4 MiB"
+    desc: "Maximum readable file size unless overridden"
+  - name: "MaxScopeDepth"
+    default: 128
+    desc: "Maximum nesting depth of pushed scopes"
+  - name: "MaxTraceDepth"
+    default: 256
+    desc: "Maximum trace frame nesting"
+  - name: "MaxPluginCount"
+    default: 64
+    desc: "Maximum number of simultaneously loaded plugins"
+PredefinedMacros:
+  - name: "__EKIPPX__"
+    expansion: "1"
+    desc: "Indicates that EkippX is the active preprocessor"
+  - name: "__EKIPPX_VERSION__"
+    expansion: "$SYSVAR{VERSION}"
+    desc: "Current EkippX version string"
+  - name: "__FILE__"
+    expansion: "$SYSVAR{FILENAME}"
+    desc: "Current file path"
+  - name: "__DIR__"
+    expansion: "$SYSVAR{DIRNAME}"
+    desc: "Current directory path"
+  - name: "__BASE__"
+    expansion: "$SYSVAR{BASENAME}"
+    desc: "Current file basename"
+  - name: "__LINE__"
+    expansion: "$SYMBOL{CurrentLine}"
+    desc: "Current line number"
+  - name: "__COLUMN__"
+    expansion: "$SYMBOL{CurrentColumn}"
+    desc: "Current column number"
+  - name: "__DATE__"
+    expansion: "$DATE{iso-date}"
+    desc: "Current local date"
+  - name: "__TIME__"
+    expansion: "$DATE{iso-time}"
+    desc: "Current local time"
+IniFormat:
+  summary: "Configuration files may be loaded from INI-like sources."
+  sections:
+    - name: "[core]"
+      desc: "Core runtime configuration keys"
+    - name: "[include]"
+      desc: "Include path and file resolution configuration"
+    - name: "[plugins]"
+      desc: "Plugin enablement and plugin search paths"
+    - name: "[diagnostics]"
+      desc: "Diagnostic verbosity and formatting"
+    - name: "[compat]"
+      desc: "Compatibility and legacy toggles"
+  rules:
+    - "Lines beginning with ';' or '#' are comments"
+    - "Key-value pairs use '='"
+    - "Repeated keys append when the destination key is list-like"
+    - "Unknown sections may be ignored or warned about depending on StrictMode"
+Testing:
+  recommended:
+    - "Golden-file tests for emitted output"
+    - "Roundtrip tests for config loading"
+    - "Recursion limit tests"
+    - "Scope isolation tests"
+    - "Plugin loading and sandbox policy tests"
+    - "Cross-platform newline normalization tests"
+  fixtures:
+    - "Minimal main file"
+    - "Nested include tree"
+    - "Malformed syntax cases"
+    - "Large argument fan-out"
+    - "Unicode and encoding edge cases"

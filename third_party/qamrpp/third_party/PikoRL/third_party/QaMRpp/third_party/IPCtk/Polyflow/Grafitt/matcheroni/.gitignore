@@ -1,0 +1,9 @@
+build
+.vscode/settings.json
+.ninja_deps
+.ninja_log
+platform.info
+csmith_files
+test_files
+__pycache__
+hancho.py

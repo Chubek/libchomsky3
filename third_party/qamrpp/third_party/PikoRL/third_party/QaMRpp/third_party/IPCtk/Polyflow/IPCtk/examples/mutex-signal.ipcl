@@ -1,0 +1,6 @@
+mutex lock1 = semaphore("/sync.lock", 1);
+signal sig1 = eventfd();
+queue q = mpsc.ring(32);
+
+pipe critical = lock(lock1) -> enqueue(q) -> unlock(lock1) -> notify(sig1);
+pipe waiter = wait(sig1) -> lock(lock1) -> dequeue(q) -> unlock(lock1);

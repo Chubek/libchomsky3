@@ -1,0 +1,49 @@
+# Doxyfile for Polyflow
+
+PROJECT_NAME           = "Polyflow"
+PROJECT_NUMBER         = "1.0.0"
+PROJECT_BRIEF          = "C++20 header-only graph-based task concurrency library"
+
+OUTPUT_DIRECTORY       = @CMAKE_CURRENT_BINARY_DIR@/docs
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/Polyflow.hpp \
+                         @CMAKE_CURRENT_SOURCE_DIR@/Polyexec.hpp \
+                         @CMAKE_CURRENT_SOURCE_DIR@/PolyflowData.hpp \
+                         @CMAKE_CURRENT_SOURCE_DIR@/PolyflowDSLUtils.hpp \
+                         @CMAKE_CURRENT_SOURCE_DIR@/docs/FrontPage.rst \
+                         @CMAKE_CURRENT_SOURCE_DIR@/docs/manual
+
+RECURSIVE              = YES
+FILE_PATTERNS          = *.hpp *.cpp *.md *.rst
+EXCLUDE_PATTERNS       = */test/* */examples/*
+
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+HTML_FILE_EXTENSION    = .html
+
+GENERATE_LATEX         = NO
+
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = NO
+
+HAVE_DOT               = YES
+DOT_IMAGE_FORMAT       = svg
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+
+CLASS_DIAGRAMS         = YES
+COLLABORATION_GRAPH    = YES
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+
+JAVADOC_AUTOBRIEF      = YES
+QT_AUTOBRIEF           = YES
+
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+
+USE_MDFILE_AS_MAINPAGE = @CMAKE_CURRENT_SOURCE_DIR@/docs/FrontPage.rst

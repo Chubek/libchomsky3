@@ -1,0 +1,4 @@
+traverse in "my-graphs/friendship-graph.gbin" {
+  from "Alice"
+  depth 3
+}

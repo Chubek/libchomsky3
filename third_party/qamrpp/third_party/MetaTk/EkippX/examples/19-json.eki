@@ -1,0 +1,2 @@
+@emitln(&jsonEncode(hello world))
+@emitln(&jsonDecode(`"hello world"`))

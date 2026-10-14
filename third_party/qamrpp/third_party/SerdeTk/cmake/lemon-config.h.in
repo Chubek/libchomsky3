@@ -1,0 +1,4 @@
+#pragma once
+
+#define LEMON_ONLY_TEMPLATES
+#define LEMON_HAVE_LONG_LONG

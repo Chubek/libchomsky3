@@ -15,6 +15,8 @@ option(CHOMSKY3_BUILD_TESTS "Build test suite" OFF)
 option(CHOMSKY3_BUILD_EXAMPLES "Build example programs" OFF)
 option(CHOMSKY3_ENABLE_JIT "Enable JIT compilation support via SLJIT" ON)
 option(CHOMSKY3_INSTALL "Generate install target" ON)
+option(CHOMSKY3_BUILD_REGEXPPC "Build RegexPPC lexer generator" ON)
+option(REGEXPPC_BUILD_TESTS "Run RegexPPC end-to-end tests" OFF)
 
 # ============================================================================
 # Compiler Settings
@@ -133,6 +135,14 @@ if(CHOMSKY3_BUILD_EXAMPLES)
 endif()
 
 add_subdirectory(docs)
+
+if(CHOMSKY3_BUILD_REGEXPPC)
+    enable_language(CXX)
+    if(REGEXPPC_BUILD_TESTS)
+        enable_testing()
+    endif()
+    add_subdirectory(regexppc)
+endif()
 
 # ============================================================================
 # Installation

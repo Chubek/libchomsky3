@@ -1,0 +1,10 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: MiniZIP
+Description: Header-only archiving and compression library
+Version: @PROJECT_VERSION@
+URL: https://github.com/Chubek/SerdeTk
+
+Cflags: -I${includedir}
+

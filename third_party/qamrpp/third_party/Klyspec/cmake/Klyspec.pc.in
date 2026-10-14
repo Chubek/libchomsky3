@@ -1,0 +1,10 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: Klyspec
+Description: Header-only C++20 CLI framework with manifest-driven code generation
+Version: @KLYSPEC_VERSION@
+URL: https://github.com/klyspec/klyspec
+Requires:
+Cflags: -I${includedir}

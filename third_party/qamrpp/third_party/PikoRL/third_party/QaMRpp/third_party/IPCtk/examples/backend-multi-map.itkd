@@ -1,0 +1,22 @@
+target rust
+capability socket
+capability pubsub
+capability sync
+capability signal
+capability codec
+
+import std::sync::Arc
+include ./backend/helpers.rs
+map queue.enqueue -> ring.push
+map queue.dequeue -> ring.pop
+
+rule recv = net::recv(${arg0});
+rule send = net::send(${arg0});
+rule enqueue = queue::push(${arg0});
+rule dequeue = queue::pop(${arg0});
+rule lock = sync::lock(${arg0});
+rule unlock = sync::unlock(${arg0});
+rule wait = sync::wait(${arg0});
+rule notify = sync::notify(${arg0});
+rule decode = codec::decode(${arg0});
+rule encode = codec::encode(${arg0});

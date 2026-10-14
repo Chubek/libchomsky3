@@ -1,0 +1,2 @@
+@plugin(random)
+@emitln(&pick(red, green, blue))

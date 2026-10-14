@@ -1,0 +1,15 @@
+{
+  "server": {
+    "host": "localhost",
+    "port": 8080
+  },
+  "database": {
+    "engine": "postgres",
+    "pool_size": 20
+  },
+  "features": {
+    "search": true,
+    "caching": false,
+    "export_formats": ["pdf", "html", "epub"]
+  }
+}

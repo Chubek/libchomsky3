@@ -1,0 +1,9 @@
+before_script:
+  - sudo apt-get install tcsh
+script: make && make test
+language: c
+compiler:
+  - clang
+  - gcc
+os:
+  - linux

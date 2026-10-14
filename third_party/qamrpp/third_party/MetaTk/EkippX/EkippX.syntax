@@ -1,0 +1,41 @@
+# EkippX syntax definition for the PikoRL-facing REPL contract.
+# This pass-1 format is intentionally plain-text and editor-friendly.
+
+[language]
+name = EkippX
+scope = source.ekippx
+line_comment = #
+
+[delimiters]
+directive = @
+function = &
+expander = $
+directive_open = (
+directive_close = )
+function_open = (
+function_close = )
+expander_open = {
+expander_close = }
+
+[classes]
+macro_name = /^[A-Za-z_][A-Za-z0-9_?.-]*$/
+directive_name = /^@[A-Za-z_][A-Za-z0-9_?.-]*/
+function_name = /^&[A-Za-z_][A-Za-z0-9_?.-]*/
+expander_name = /^\$[A-Za-z_][A-Za-z0-9_?.-]*/
+number = /[-+]?[0-9]+(\.[0-9]+)?/
+string_double = /"([^"\\]|\\.)*"/
+string_single = /'[^']*'/
+string_literal = /`[^`]*`/
+comment = /#.*/
+atomic = /\/[A-Za-z_][A-Za-z0-9_-]*/
+
+[keywords]
+directives = emit,emitln,define,deflit,undef,defsym,alias,unalias,include,config,if,counter,inc,dec,plugin,pluginpath,requireplugin,warning,notice,tracepoint
+functions = echo,upper,lower,trim,title,replace,join,count,first,last,repeatText,padLeft,padRight,center,add,abs,min,max,clamp,uuid,timestamp,hash,checksum,jsonEncode,jsonDecode,csvsplit,csvjoin,envget,envhas,counterValue,sleep
+expanders = CONFIG,META,RANDOM,UUID,COUNTER,PLUGIN,DATE
+conditionals = IfEq?,IfContains?,IfStartsWith?,IfEndsWith?,IfPluginLoaded?,IfConfig?
+
+[examples]
+sample1 = @define(HELLO, `world`) @emitln(&upper(&echo(hello, $CONFIG{strict})))
+sample2 = @counter(build, 41) @inc(build) @emitln($COUNTER{build})
+sample3 = @config(trace, true) @tracepoint(before-output) @emitln(&upper(traced))

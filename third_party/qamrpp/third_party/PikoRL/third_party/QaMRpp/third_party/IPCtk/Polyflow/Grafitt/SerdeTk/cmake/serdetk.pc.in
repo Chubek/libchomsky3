@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: SerdeTk
+Description: Header-only data serialization library
+Version: @PROJECT_VERSION@
+URL: https://github.com/Chubek/SerdeTk
+
+Cflags: -I${includedir}

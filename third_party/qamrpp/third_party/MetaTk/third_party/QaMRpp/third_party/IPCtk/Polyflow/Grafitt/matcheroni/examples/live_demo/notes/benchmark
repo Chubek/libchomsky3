@@ -1,0 +1,26 @@
+(With -flto)
+Parsing data/rapidjson_sample.json
+
+Tree nodes 5672
+Byte total 687491.000000
+Line total 3314.000000
+Match time 0.513930
+Parse time 0.684599
+Match byte rate  1337.713307 megabytes per second
+Match line rate  6.448349 megalines per second
+Parse byte rate  1004.224371 megabytes per second
+Parse line rate  4.840790 megalines per second
+
+
+(No -flto)
+Parsing data/rapidjson_sample.json
+
+Tree nodes 5672
+Byte total 687491.000000
+Line total 3314.000000
+Match time 0.590587
+Parse time 0.693285
+Match byte rate  1164.080821 megabytes per second
+Match line rate  5.611366 megalines per second
+Parse byte rate  991.642687 megabytes per second
+Parse line rate  4.780141 megalines per second

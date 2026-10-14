@@ -1,0 +1,84 @@
+format JSON
+category textual
+extensions .json
+mime application/json
+encoding utf-8
+
+identity {
+  canonical-name JSON
+  description RFC-8259 JSON mapped to serdetk::Document
+}
+
+model {
+  root any
+  object key-type string
+  array ordered true
+  scalar-types null boolean int uint double string
+  binary policy reject
+}
+
+lexical {
+  whitespace "[ \t\r\n]+"
+  comment-support false
+  string-delimiter '"'
+  escape-sequences "\\\"" "\\\\" "\\/" "\\b" "\\f" "\\n" "\\r" "\\t" "\\uXXXX"
+  number integer signed true
+  number fraction true
+  number exponent true
+  literals null true false
+}
+
+parse {
+  strategy recursive-descent
+  production value object array string number true false null
+  object open "{" close "}" separator "," key-value-separator ":"
+  array open "[" close "]" separator ","
+  duplicate-keys policy last-wins
+  trailing-commas allow false
+  unicode policy utf8
+  unicode surrogate-pairs required
+  error trailing-content fatal
+}
+
+dump {
+  canonical-minified true
+  key-order source
+  escape-unicode minimal
+  emit-binary false
+  numeric canonical-json
+}
+
+formatting {
+  pretty default true
+  indent default "  "
+  newline default "\n"
+  space-after-colon default true
+  space-after-comma default true
+}
+
+query {
+  engines API JQ STKQ SPARQL
+  default-engine API
+  json-pointer true
+  path-semantics object-dot array-index
+}
+
+validation {
+  standards JSON-Schema
+  schema-draft 2020-12
+  additional-properties supported
+  required supported
+  enum supported
+  numeric-bounds supported
+}
+
+conversion {
+  adapters YAML.JSONAdapter XML.JSONAdapter BSON.JSONAdapter MessagePack.JSONAdapter
+  loss-reporting required
+  policy strict loss-aware best-effort
+}
+
+binarization {
+  targets BSON MessagePack
+  entrypoint json::Binarize<Adapter>
+}

@@ -1,0 +1,76 @@
+(* Jiterati Textual IR Grammar *)
+
+translation-unit = module ;
+module           = module-header , { declaration | function | global | directive } ;
+module-header    = "module" , identifier , [ attribute-list ] , terminator ;
+
+declaration      = "declare" , visibility , type , global-symbol , parameter-list , [ attribute-list ] , terminator ;
+global           = "global" , visibility , type , global-symbol , "=" , literal , [ metadata-list ] , terminator ;
+function         = "func" , visibility , type , global-symbol , parameter-list , [ attribute-list ] , block-list , "end" , terminator ;
+block-list       = { block } ;
+block            = label , ":" , terminator , { instruction } ;
+
+instruction      = [ result , "=" ] , opcode , [ operand-list ] , [ metadata-list ] , terminator ;
+result           = value-name ;
+opcode           = identifier | intrinsic ;
+intrinsic        = "@" , identifier , { "." , identifier } ;
+operand-list     = operand , { "," , operand } ;
+operand          = value-ref | typed-literal | label-ref | global-symbol | attribute-list ;
+value-ref        = value-name | parameter-ref ;
+value-name       = "%" , identifier ;
+parameter-ref    = "$" , identifier ;
+label-ref        = "^" , identifier ;
+global-symbol    = "@" , identifier ;
+
+type             = primitive-type | pointer-type | function-type ;
+primitive-type   = "void" | "i1" | "i8" | "i16" | "i32" | "i64" | "f32" | "f64" | "ptr" ;
+pointer-type     = "ptr" , [ "<" , type , ">" ] ;
+function-type    = "fn" , "(" , [ type , { "," , type } ] , ")" , "->" , type ;
+parameter-list   = "(" , [ parameter , { "," , parameter } ] , ")" ;
+parameter        = type , parameter-ref , [ attribute-list ] ;
+
+typed-literal    = type , literal ;
+literal          = bool-literal | integer-literal | float-literal | string-literal | null-literal ;
+bool-literal     = "true" | "false" ;
+null-literal     = "null" ;
+integer-literal  = [ sign ] , ( decimal | hexadecimal | binary ) ;
+float-literal    = [ sign ] , decimal , "." , decimal , [ exponent ] ;
+string-literal   = '"' , { string-character | escape } , '"' ;
+
+decimal          = digit , { digit | "_" } ;
+hexadecimal      = "0x" , hex-digit , { hex-digit | "_" } ;
+binary           = "0b" , binary-digit , { binary-digit | "_" } ;
+exponent         = ( "e" | "E" ) , [ sign ] , decimal ;
+sign             = "+" | "-" ;
+
+attribute-list   = "[" , [ attribute , { "," , attribute } ] , "]" ;
+attribute        = identifier , [ "=" , attribute-value ] ;
+attribute-value  = literal | identifier | type ;
+metadata-list    = "{" , [ metadata , { "," , metadata } ] , "}" ;
+metadata         = identifier , ":" , metadata-value ;
+metadata-value   = literal | value-ref | global-symbol | label-ref | attribute-list ;
+directive        = "." , identifier , [ directive-body ] , terminator ;
+directive-body   = { identifier | literal | type | punctuation } ;
+visibility       = "public" | "private" | "internal" | "external" ;
+
+identifier       = identifier-head , { identifier-tail } ;
+identifier-head  = alphabetic | "_" ;
+identifier-tail  = alphabetic | digit | "_" | "." ;
+label            = identifier ;
+terminator       = newline | ";" ;
+comment          = line-comment | block-comment ;
+line-comment     = "//" , { not-newline } , newline ;
+block-comment    = "/*" , { not-block-end } , "*/" ;
+whitespace       = { space | tab | newline | comment } ;
+punctuation      = "," | ":" | "=" | "(" | ")" | "[" | "]" | "{" | "}" | "->" ;
+
+alphabetic       = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" ;
+digit            = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+hex-digit        = digit | "a" | "b" | "c" | "d" | "e" | "f" | "A" | "B" | "C" | "D" | "E" | "F" ;
+binary-digit     = "0" | "1" ;
+
+(* Ambiguity notes:
+   1. ptr is both a primitive spelling and the start of an optional typed pointer form.
+   2. Intrinsics and globals both use @; parser context decides whether an opcode or operand is expected.
+   3. Directives are reserved for serializer and package metadata and must not redefine function semantics.
+*)

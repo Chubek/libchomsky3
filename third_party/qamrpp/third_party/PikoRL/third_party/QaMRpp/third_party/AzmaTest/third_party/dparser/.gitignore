@@ -1,0 +1,17 @@
+D_BUILD_VERSION
+*.o
+*.a
+*.swp
+*.d_parser.c
+tests/*.out
+tests/*.d_parser.c
+make_dparser
+test_parser
+sample_parser
+/.aider*
+/.build
+/.vs
+/.install
+/Cargo.lock
+/target
+/.vscode

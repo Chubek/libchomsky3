@@ -1,0 +1,8 @@
+target c
+capability reqrep
+capability pubsub
+include <stdint.h>
+include <stddef.h>
+map string -> const char*
+map bytes -> uint8_t*
+rule emit_channel = template("int send_channel(int fd, const uint8_t* data, size_t len);")

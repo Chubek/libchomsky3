@@ -1,0 +1,6 @@
+%MZJL-v1.0.0
+
+archive "journal-recursive.mz"
+source "docs" recursive
+source "README.md"
+save_to "dist"

@@ -1,0 +1,7 @@
+target cpp
+capability socket
+capability codec
+rule recv = ipc.recv(${arg0});
+rule send = ipc.send(${arg0});
+rule decode = ipc.decode(${arg0});
+rule encode = ipc.encode(${arg0});

@@ -1,0 +1,4 @@
+add_library(SerdeTkSchemaRegistry STATIC SchemaStore.cpp SchemaResolver.cpp SchemaRegistry.cpp)
+target_include_directories(SerdeTkSchemaRegistry PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(SerdeTkSchemaRegistry PUBLIC SerdeTk)
+target_compile_features(SerdeTkSchemaRegistry PUBLIC cxx_std_20)

@@ -1,0 +1,3 @@
+socket client = tcp.connect("127.0.0.1:9000");
+
+pipe roundtrip = recv(client) -> decode(packet) -> encode(packet) -> send(client);

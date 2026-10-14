@@ -1,0 +1,3 @@
+terse module ir_bitwise_or_xor_details
+fn mix(x: i64, y: i64) -> i64 = (^ (| x y) (& x y))
+fn mask_flip(x: i64) -> i64 = (^ (& x 255) 170)

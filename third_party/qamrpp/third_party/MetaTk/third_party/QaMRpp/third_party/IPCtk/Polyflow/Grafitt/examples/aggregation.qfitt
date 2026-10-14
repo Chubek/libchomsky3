@@ -1,0 +1,3 @@
+aggregate in "my-graphs/friendship-graph.gbin" {
+  count vertices
+}

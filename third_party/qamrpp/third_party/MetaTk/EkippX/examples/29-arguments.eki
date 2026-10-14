@@ -1,0 +1,2 @@
+@define(PAIR, `$1::$2`)
+@emitln(&PAIR(alpha, beta))

@@ -1,0 +1,99 @@
+Protocol Buffers, Distilled
+
+Core Concept
+
+Protobuf is a schema-driven binary serialization format. You define
+message structure in .proto files, compile them into code with protoc,
+and messages are encoded compactly on the wire. The schema is not
+embedded in the data — both sides must know it.
+
+Schema Language (proto3)
+
+    syntax = "proto3";
+
+    message Person {
+      string name = 1;
+      int32 id = 2;
+      repeated string emails = 3;
+      Address address = 4;
+
+      enum Type { UNKNOWN = 0; EMPLOYEE = 1; }
+      Type type = 5;
+
+      oneof contact {          // union: at most one set
+        string phone = 6;
+        string pager = 7;
+      }
+
+      map<string, int32> scores = 8;
+    }
+
+Key rules: - Field numbers (1, 2, 3…) are the wire identity — not names.
+Numbers 1–15 encode in 1 byte, so use them for hot fields. Max is
+536,870,911; 19000–19999 reserved. - Never reuse or renumber fields. Use
+reserved 4, 6; reserved "old_name"; for deleted ones. - Every field is
+optional in proto3, with defaults: 0, "", false, empty. Default values
+are not serialized — you can’t distinguish “unset” from “zero” unless
+you use optional (proto3.15+) or wrapper types. - Enums must have a zero
+value (used as default). - repeated = list; map<K,V> = dictionary (sugar
+for a repeated key/value message).
+
+Wire Format
+
+Every message is a sequence of tag–value pairs:
+
+tag = (field_number << 3) | wire_type // encoded as varint
+
+Six wire types (two deprecated):
+
+  Type   Name     Used for
+  ------ -------- -------------------------------------------------
+  0      Varint   int32/64, uint, bool, enum, sint (zigzag)
+  1      I64      fixed64, sfixed64, double
+  2      LEN      string, bytes, nested messages, packed repeated
+  5      I32      fixed32, sfixed32, float
+
+Varints: 7 bits per byte, MSB = continuation flag, little-endian groups.
+300 → 0xAC 0x02.
+
+ZigZag (sint32/64): maps signed → unsigned so negatives stay small:
+(n << 1) ^ (n >> 31). Plain int32 encodes -1 as 10 bytes; sint32 as 1
+byte.
+
+LEN fields: varint length prefix, then raw bytes. Nested messages are
+just embedded encoded messages — this makes the format recursive and
+enables lazy parsing.
+
+Packed repeated (default in proto3 for scalars): one tag + length +
+concatenated values instead of tag-per-element.
+
+Key Properties
+
+-   Not self-describing — bytes are meaningless without the schema.
+-   Field order isn’t guaranteed; parsers must accept any order.
+    Serialization isn’t canonical — don’t hash/compare encoded bytes.
+-   Unknown fields are preserved (proto3.5+), enabling proxies to pass
+    through data from newer schemas.
+-   Forward/backward compatible if you: only add fields, never change
+    numbers/types, keep zero-valued enum first.
+-   Last-one-wins: duplicate scalar fields → last value taken (this is
+    how merging works).
+-   No message framing — the format doesn’t delimit messages; you must
+    length-prefix streams yourself.
+-   Size limit in practice: ~2 GB; recommended to stay well under a few
+    MB per message.
+
+Compatibility-Safe Type Changes
+
+Interchangeable on the wire: int32 ↔ int64 ↔ uint32 ↔ uint64 ↔ bool
+(varint family), sint32 ↔ sint64, string ↔ bytes (if valid UTF-8),
+fixed32 ↔ sfixed32, fixed64 ↔ sfixed64. Anything else breaks.
+
+One-Line Mental Model
+
+  A protobuf message is a flat stream of
+  (field_number, wire_type, value) triples, varint-encoded, where
+  meaning lives entirely in the .proto schema and unknown fields are
+  skippable by design.
+
+Full spec: https://protobuf.dev/programming-guides/encoding/

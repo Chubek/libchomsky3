@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: AzmaTest
+Description: Header-Only Utility for Fuzzing and Unittesting
+Version: @PROJECT_VERSION@
+URL: https://github.com/Chubek/AzmaTest
+
+Cflags: -I${includedir}

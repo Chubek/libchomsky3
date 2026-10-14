@@ -1,0 +1,47 @@
+# Build artifacts
+build/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Test binaries
+test_polyflow
+test_polyexec
+polyflow-monitor
+tests/test_*
+!tests/*.cpp
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Doxygen
+docs/html/
+docs/latex/
+docs/xml/
+Doxyfile
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary
+*.tmp
+*.log
+/tmp/
+
+build
+
+AGENTS.md
+PROJECT_SUMMARY.md

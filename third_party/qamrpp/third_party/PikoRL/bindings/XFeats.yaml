@@ -1,0 +1,974 @@
+# XFeats.yaml
+Version: 2.0.0
+Manifest: XFeats
+Author: Chubak Bidpaa <chubakbidpaa@riseup.net>
+Description: |
+  XFeats are target-specific binding features that SWIG-based wrapper
+  generation can enable conditionally inside a single .i file. They are
+  typically guarded with language preprocessor symbols such as
+  #ifdef SWIGPYTHON, #ifdef SWIGJAVA, #ifdef SWIGCSHARP, etc., or injected
+  via %pythoncode, %typemap, %rename, %feature, %pragma, %insert and related
+  SWIG extension hooks.
+
+  The purpose of this manifest is to let a bindings generator validate and
+  enable language-specific wrapper capabilities in a declarative way, so a
+  project can author one interface file with optional language-native
+  enhancements.
+
+Conventions:
+  xfeat_id_prefixes:
+    py: "Python-specific feature"
+    java: "Java-specific feature"
+    cs: "C#-specific feature"
+    ruby: "Ruby-specific feature"
+    lua: "Lua-specific feature"
+    go: "Go-specific feature"
+    js: "JavaScript-specific feature"
+    php: "PHP-specific feature"
+    perl: "Perl-specific feature"
+    r: "R-specific feature"
+    d: "D-specific feature"
+    multi: "Multi-language feature"
+
+  notes: |
+    - A generator may reject an xfeat if the requested language is not listed
+      under `languages`.
+    - Some features require SWIG command-line flags in addition to .i content.
+    - Some snippets are illustrative and may need project-specific adaptation.
+    - "JavaScript" here refers to SWIG JavaScript backends such as Node/N-API
+      style wrapper generation where custom JS glue is injected.
+
+Features:
+
+  # --------------------------------------------------------------------------
+  # Python
+  # --------------------------------------------------------------------------
+
+  - id: "py-fn-decorators"
+    languages: ["Python"]
+    name: "Function Decorators"
+    category: "Metaprogramming"
+    summary: >
+      Wraps generated Python callables with decorators to add logging,
+      caching, validation, tracing, timing, or policy enforcement without
+      modifying the underlying C/C++ implementation.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %pythoncode %{
+        import functools
+
+        def logged(fn):
+            @functools.wraps(fn)
+            def wrapper(*args, **kwargs):
+                print(f"[XFeats] calling {fn.__name__}({args}, {kwargs})")
+                result = fn(*args, **kwargs)
+                print(f"[XFeats] {fn.__name__} -> {result!r}")
+                return result
+            return wrapper
+
+        compute = logged(compute)
+        %}
+        #endif
+
+  - id: "py-properties"
+    languages: ["Python"]
+    name: "Attribute Properties"
+    category: "Object Model"
+    summary: >
+      Exposes C++ getter/setter pairs as native Python properties so
+      obj.value is used instead of obj.getValue() / obj.setValue().
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %include <attribute.i>
+        %attribute(Sensor, double, value, getValue, setValue);
+        #endif
+
+  - id: "py-builtin"
+    languages: ["Python"]
+    name: "Builtin Types"
+    category: "Performance"
+    summary: >
+      Generates proxy classes as CPython builtin types rather than pure-Python
+      shadow classes, reducing object and dispatch overhead.
+    usage:
+      Python: |
+        // Enable with command line:
+        // swig -python -builtin example.i
+        #ifdef SWIGPYTHON
+        %feature("python:slot", "tp_repr", functype="reprfunc") Vector::repr;
+        #endif
+
+  - id: "py-dunder-repr"
+    languages: ["Python"]
+    name: "String Representation Hooks"
+    category: "Object Model"
+    summary: >
+      Maps C++ text conversion functions onto Python __str__ and __repr__
+      behavior for natural printing and debugging.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %rename(__str__)  Vector::toString;
+        %rename(__repr__) Vector::debugString;
+        %feature("python:slot", "tp_str", functype="reprfunc") Vector::toString;
+        #endif
+
+  - id: "py-context-manager"
+    languages: ["Python"]
+    name: "Context Manager Protocol"
+    category: "Object Model"
+    summary: >
+      Makes wrapped resource-owning classes usable with Python's with
+      statement by defining __enter__ and __exit__.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %extend FileHandle {
+          %pythoncode %{
+          def __enter__(self):
+              return self
+          def __exit__(self, exc_type, exc_val, exc_tb):
+              self.close()
+              return False
+          %}
+        }
+        #endif
+
+  - id: "py-iterators"
+    languages: ["Python"]
+    name: "Iterator Protocol"
+    category: "Object Model"
+    summary: >
+      Adds __iter__ and optionally __next__ behavior so wrapped containers
+      work naturally in for-loops and comprehensions.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %extend IntVector {
+          %pythoncode %{
+          def __iter__(self):
+              for i in range(self.size()):
+                  yield self.get(i)
+          %}
+        }
+        #endif
+
+  - id: "py-len-bool"
+    languages: ["Python"]
+    name: "Length and Truthiness"
+    category: "Object Model"
+    summary: >
+      Maps size()/empty() style methods onto Python's __len__ and __bool__
+      protocol for more idiomatic control flow.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %rename(__len__)  Buffer::size;
+        %rename(__bool__) Buffer::isValid;
+        #endif
+
+  - id: "py-indexing"
+    languages: ["Python"]
+    name: "Indexing and Slicing"
+    category: "Object Model"
+    summary: >
+      Maps element access methods or operators onto Python indexing protocol
+      for obj[i] style access.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %rename(__getitem__) Vector::get;
+        %rename(__setitem__) Vector::set;
+        #endif
+
+  - id: "py-callable"
+    languages: ["Python"]
+    name: "Callable Objects"
+    category: "Object Model"
+    summary: >
+      Exposes function-object style C++ classes through Python's __call__
+      protocol so wrapped instances can be invoked like functions.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %rename(__call__) Functor::operator();
+        #endif
+
+  - id: "py-richcompare"
+    languages: ["Python"]
+    name: "Rich Comparison Protocol"
+    category: "Object Model"
+    summary: >
+      Maps C++ comparison operators to Python's __eq__, __lt__, __le__,
+      __gt__, and __ge__ methods.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %rename(__eq__) Compareable::operator==;
+        %rename(__lt__) Compareable::operator<;
+        #endif
+
+  - id: "py-numeric-dunders"
+    languages: ["Python"]
+    name: "Numeric Dunder Methods"
+    category: "Object Model"
+    summary: >
+      Maps arithmetic operators to Python numeric protocol methods such as
+      __add__, __sub__, __mul__, and __truediv__.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %rename(__add__) Vector::operator+;
+        %rename(__sub__) Vector::operator-;
+        %rename(__mul__) Vector::operator*;
+        #endif
+
+  - id: "py-buffer-protocol"
+    languages: ["Python"]
+    name: "Buffer / Memoryview Support"
+    category: "Performance"
+    summary: >
+      Exposes contiguous native storage to Python buffer consumers such as
+      memoryview, NumPy, or binary APIs when wrapper internals allow it.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        // Project-specific support often required; illustrative slot hook:
+        %feature("python:slot", "bf_getbuffer", functype="getbufferproc") ByteBuffer::getbuffer;
+        #endif
+
+  - id: "py-numpy-typemaps"
+    languages: ["Python"]
+    name: "NumPy Typemap Integration"
+    category: "Type Mapping"
+    summary: >
+      Converts native arrays or numeric buffers into NumPy arrays and accepts
+      NumPy arrays as arguments through typemap support.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %include "numpy.i"
+        %init %{
+          import_array();
+        %}
+        // Additional %apply / typemap declarations would be project-specific.
+        #endif
+
+  - id: "py-dataclass-postwrap"
+    languages: ["Python"]
+    name: "Dataclass-style Python Facades"
+    category: "Metaprogramming"
+    summary: >
+      Adds Python-side convenience wrappers or facades that present selected
+      wrapped types with dataclass-like ergonomics.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %pythoncode %{
+        from dataclasses import dataclass
+
+        @dataclass
+        class PointView:
+            x: float
+            y: float
+
+            @classmethod
+            def from_native(cls, p):
+                return cls(x=p.getX(), y=p.getY())
+        %}
+        #endif
+
+  - id: "py-docstrings"
+    languages: ["Python"]
+    name: "Python Docstring Injection"
+    category: "Documentation"
+    summary: >
+      Attaches Python-visible docstrings to generated functions, methods, and
+      classes for help(), IDE support, and introspection.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %feature("docstring") Widget::Render "Render the widget into the current context.";
+        %feature("docstring") Widget "Wrapped native Widget type.";
+        #endif
+
+  - id: "py-module-init"
+    languages: ["Python"]
+    name: "Module Initialization Code"
+    category: "Code Injection"
+    summary: >
+      Injects Python code into the generated module at import time for setup,
+      aliases, monkey-patching, and compatibility helpers.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %pythoncode %{
+        __all__ = [name for name in globals() if not name.startswith("_")]
+        %}
+        #endif
+
+  - id: "py-async-shim"
+    languages: ["Python"]
+    name: "Asyncio Wrapper Shims"
+    category: "Interoperability"
+    summary: >
+      Adds Python-side async helpers that dispatch blocking wrapped calls into
+      executors so applications can integrate with asyncio more naturally.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %pythoncode %{
+        import asyncio
+
+        async def compute_async(*args, **kwargs):
+            loop = asyncio.get_running_loop()
+            return await loop.run_in_executor(None, lambda: compute(*args, **kwargs))
+        %}
+        #endif
+
+  # --------------------------------------------------------------------------
+  # Multi-language core
+  # --------------------------------------------------------------------------
+
+  - id: "multi-exception-mapping"
+    languages: ["Python", "Java", "C#", "Ruby", "Go", "PHP", "Perl"]
+    name: "C++ Exception Translation"
+    category: "Error Handling"
+    summary: >
+      Converts thrown C++ exceptions into idiomatic target-language exceptions
+      or error signaling at the wrapper boundary.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %exception {
+          try {
+            $action
+          } catch (const std::out_of_range& e) {
+            PyErr_SetString(PyExc_IndexError, e.what());
+            SWIG_fail;
+          }
+        }
+        #endif
+      Java: |
+        #ifdef SWIGJAVA
+        %typemap(throws, throws="java.lang.IndexOutOfBoundsException")
+          std::out_of_range %{
+            jclass clazz = jenv->FindClass("java/lang/IndexOutOfBoundsException");
+            jenv->ThrowNew(clazz, $1.what());
+            return $null;
+          %}
+        #endif
+      C#: |
+        #ifdef SWIGCSHARP
+        %typemap(throws, canthrow=1) std::out_of_range %{
+          SWIG_CSharpSetPendingExceptionArgument(
+            SWIG_CSharpArgumentOutOfRangeException, $1.what(), "");
+          return $null;
+        %}
+        #endif
+      Ruby: |
+        #ifdef SWIGRUBY
+        %exception {
+          try {
+            $action
+          } catch (const std::out_of_range& e) {
+            rb_raise(rb_eRangeError, "%s", e.what());
+          }
+        }
+        #endif
+      Go: |
+        #ifdef SWIGGO
+        %exception {
+          try {
+            $action
+          } catch (const std::exception& e) {
+            _swig_gopanic(e.what());
+          }
+        }
+        #endif
+
+  - id: "multi-operator-overloading"
+    languages: ["Python", "C#", "Ruby", "Lua"]
+    name: "Operator Overloading"
+    category: "Object Model"
+    summary: >
+      Maps C++ operators onto the destination language's operator model.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %rename(__add__) Vector::operator+;
+        %rename(__eq__)  Vector::operator==;
+        #endif
+      C#: |
+        #ifdef SWIGCSHARP
+        %rename(Add) Vector::operator+;
+        %csmethodmodifiers Vector::Add "public static";
+        #endif
+      Ruby: |
+        #ifdef SWIGRUBY
+        %rename("+")  Vector::operator+;
+        %rename("==") Vector::operator==;
+        #endif
+      Lua: |
+        #ifdef SWIGLUA
+        %rename(__add) Vector::operator+;
+        #endif
+
+  - id: "multi-directors"
+    languages: ["Python", "Java", "C#", "Ruby", "D"]
+    name: "Directors (Cross-Language Polymorphism)"
+    category: "Interoperability"
+    summary: >
+      Allows target-language subclasses to override virtual C++ methods, with
+      native calls dispatched back into the managed or scripting runtime.
+    usage:
+      Python: |
+        %module(directors="1") example
+        #ifdef SWIGPYTHON
+        %feature("director") Callback;
+        %feature("nodirector") Callback::finalOnly;
+        #endif
+      Java: |
+        %module(directors="1") example
+        #ifdef SWIGJAVA
+        %feature("director") Callback;
+        #endif
+      C#: |
+        %module(directors="1") example
+        #ifdef SWIGCSHARP
+        %feature("director") Callback;
+        #endif
+
+  - id: "multi-smart-pointers"
+    languages: ["Python", "Java", "C#"]
+    name: "Smart Pointer Transparency"
+    category: "Type Mapping"
+    summary: >
+      Makes std::shared_ptr or similar wrapped objects feel like the raw
+      underlying type rather than explicit smart pointer containers.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %include <std_shared_ptr.i>
+        %shared_ptr(Widget)
+        #endif
+      Java: |
+        #ifdef SWIGJAVA
+        %include <std_shared_ptr.i>
+        %shared_ptr(Widget)
+        #endif
+      C#: |
+        #ifdef SWIGCSHARP
+        %include <std_shared_ptr.i>
+        %shared_ptr(Widget)
+        #endif
+
+  - id: "multi-std-container-sugar"
+    languages: ["Python", "Ruby", "Java", "C#", "D"]
+    name: "STL Container Sugar"
+    category: "Type Mapping"
+    summary: >
+      Instantiates standard containers with target-language-friendly access
+      patterns including indexing, iteration, and length queries.
+    usage:
+      Python: |
+        %include <std_vector.i>
+        %template(DoubleVector) std::vector<double>;
+      Java: |
+        %include <std_vector.i>
+        %template(IntVector) std::vector<int>;
+      C#: |
+        %include <std_vector.i>
+        %template(StringVector) std::vector<std::string>;
+
+  - id: "multi-nullability"
+    languages: ["Python", "Java", "C#", "Go", "PHP"]
+    name: "Nullable / Optional Argument Semantics"
+    category: "Type Mapping"
+    summary: >
+      Adapts nullable pointers, optional values, or absent arguments to
+      target-language notions such as None, null, nullable value types, or
+      nil-like semantics.
+    usage:
+      C#: |
+        #ifdef SWIGCSHARP
+        %typemap(cstype) double* "double?"
+        %typemap(csin)   double* "$csinput.HasValue ? new double($csinput.Value) : (double*)0"
+        #endif
+      Java: |
+        #ifdef SWIGJAVA
+        // Commonly implemented with custom typemaps and boxed types.
+        #endif
+      Python: |
+        #ifdef SWIGPYTHON
+        // Commonly implemented with typemaps that accept None as null.
+        #endif
+
+  - id: "multi-docstrings"
+    languages: ["Python", "Java", "C#", "Ruby"]
+    name: "Language-side Documentation Injection"
+    category: "Documentation"
+    summary: >
+      Adds target-language-visible documentation comments, docstrings, or
+      wrapper annotations for generated APIs.
+    usage:
+      Python: |
+        #ifdef SWIGPYTHON
+        %feature("docstring") Example::run "Execute the example algorithm.";
+        #endif
+      Java: |
+        #ifdef SWIGJAVA
+        %javamethodmodifiers Example::run "public";
+        // Custom JavaDoc-like text is usually injected via pragmas or post-processing.
+        #endif
+
+  # --------------------------------------------------------------------------
+  # Java
+  # --------------------------------------------------------------------------
+
+  - id: "java-pragmas"
+    languages: ["Java"]
+    name: "JNI Module Pragmas"
+    category: "Code Injection"
+    summary: >
+      Injects custom code into generated Java classes or JNI helper code such
+      as static initialization blocks.
+    usage:
+      Java: |
+        #ifdef SWIGJAVA
+        %pragma(java) jniclasscode=%{
+          static {
+            System.loadLibrary("example");
+          }
+        %}
+        #endif
+
+  - id: "java-enums"
+    languages: ["Java"]
+    name: "Typesafe Enum Mapping"
+    category: "Type Mapping"
+    summary: >
+      Maps C/C++ enums into Java-friendly enum-like forms rather than exposing
+      only primitive integer constants.
+    usage:
+      Java: |
+        #ifdef SWIGJAVA
+        %include <enums.swg>
+        %javaconst(1);
+        %rename(Color) Colour;
+        #endif
+
+  - id: "java-package-layout"
+    languages: ["Java"]
+    name: "Java Package Customization"
+    category: "Code Generation"
+    summary: >
+      Controls the Java package structure of generated classes so bindings fit
+      naturally into an existing library namespace.
+    usage:
+      Java: |
+        %module(package="com.example.bindings") example
+
+  - id: "java-checked-throws"
+    languages: ["Java"]
+    name: "Checked Exception Signatures"
+    category: "Error Handling"
+    summary: >
+      Adds throws declarations to generated Java methods so native failure
+      modes surface as explicit Java API contracts.
+    usage:
+      Java: |
+        #ifdef SWIGJAVA
+        %typemap(javathrows) std::runtime_error "throws java.lang.RuntimeException"
+        #endif
+
+  - id: "java-autocloseable"
+    languages: ["Java"]
+    name: "AutoCloseable / try-with-resources"
+    category: "Object Model"
+    summary: >
+      Makes wrapped resource-owning classes implement Java AutoCloseable so
+      they can be used with try-with-resources.
+    usage:
+      Java: |
+        #ifdef SWIGJAVA
+        %pragma(java) jniclassinterfaces="java.lang.AutoCloseable"
+        %javamethodmodifiers FileHandle::close "public"
+        #endif
+
+  - id: "java-collections-helpers"
+    languages: ["Java"]
+    name: "Collection Helper Methods"
+    category: "Object Model"
+    summary: >
+      Adds Java-side convenience methods to expose wrapped containers through
+      more idiomatic collection access patterns.
+    usage:
+      Java: |
+        #ifdef SWIGJAVA
+        %pragma(java) modulecode=%{
+          public static java.util.List<Integer> toList(IntVector v) {
+            java.util.ArrayList<Integer> out = new java.util.ArrayList<>();
+            for (int i = 0; i < v.size(); ++i) out.add(v.get(i));
+            return out;
+          }
+        %}
+        #endif
+
+  - id: "java-direct-buffer"
+    languages: ["Java"]
+    name: "Direct ByteBuffer Exposure"
+    category: "Performance"
+    summary: >
+      Exposes native memory blocks as java.nio.ByteBuffer where appropriate,
+      reducing copy overhead for binary payloads.
+    usage:
+      Java: |
+        #ifdef SWIGJAVA
+        // Usually implemented with custom typemaps and JNI ByteBuffer APIs.
+        #endif
+
+  - id: "java-inner-helper-code"
+    languages: ["Java"]
+    name: "Injected Helper Classes"
+    category: "Code Injection"
+    summary: >
+      Injects Java helper classes, nested utility types, or static helpers
+      into generated module files.
+    usage:
+      Java: |
+        #ifdef SWIGJAVA
+        %pragma(java) modulecode=%{
+          public static final class Version {
+            public static String get() { return "1.0"; }
+          }
+        %}
+        #endif
+
+  - id: "java-overloads"
+    languages: ["Java"]
+    name: "Java-friendly Overload Surface"
+    category: "Code Generation"
+    summary: >
+      Refines overload exposure with renaming or typemaps so ambiguous C++
+      overload sets become usable from Java.
+    usage:
+      Java: |
+        #ifdef SWIGJAVA
+        %rename(loadFromPath) Loader::load(const std::string &);
+        %rename(loadFromBytes) Loader::load(const Buffer &);
+        #endif
+
+  # --------------------------------------------------------------------------
+  # C#
+  # --------------------------------------------------------------------------
+
+  - id: "cs-typemaps"
+    languages: ["C#"]
+    name: "C# Type Customization"
+    category: "Type Mapping"
+    summary: >
+      Fine-grained control over generated C# signatures using cstype, csin,
+      csout, csvarin, csvarout, and method modifier typemaps.
+    usage:
+      C#: |
+        #ifdef SWIGCSHARP
+        %typemap(cstype) bool& "out bool"
+        %typemap(csin)   bool& "out $csinput"
+        %csmethodmodifiers Widget::Render "public override";
+        #endif
+
+  - id: "cs-nullable"
+    languages: ["C#"]
+    name: "Nullable Value Types"
+    category: "Type Mapping"
+    summary: >
+      Maps optional native values to idiomatic nullable C# value types where
+      the binding surface can express absence.
+    usage:
+      C#: |
+        #ifdef SWIGCSHARP
+        %typemap(cstype) double* "double?"
+        %typemap(csin)   double* "$csinput.HasValue ? new double($csinput.Value) : (double*)0"
+        #endif
+
+  - id: "cs-properties"
+    languages: ["C#"]
+    name: "C# Property Surface"
+    category: "Object Model"
+    summary: >
+      Converts getter/setter method pairs into C# properties so wrapped types
+      present a natural .NET API shape.
+    usage:
+      C#: |
+        #ifdef SWIGCSHARP
+        %csproperty(Widget, int, Id, getId, setId)
+        #endif
+
+  - id: "cs-indexers"
+    languages: ["C#"]
+    name: "Indexer Support"
+    category: "Object Model"
+    summary: >
+      Exposes element access methods as C# indexers for obj[i] syntax.
+    usage:
+      C#: |
+        #ifdef SWIGCSHARP
+        %rename(get_Item) Vector::get;
+        %rename(set_Item) Vector::set;
+        #endif
+
+  - id: "cs-disposable"
+    languages: ["C#"]
+    name: "IDisposable Integration"
+    category: "Object Model"
+    summary: >
+      Makes wrapped resource-managing classes align with IDisposable and the
+      using pattern in C#.
+    usage:
+      C#: |
+        #ifdef SWIGCSHARP
+        %feature("csinterfaces") FileHandle "System.IDisposable"
+        #endif
+
+  - id: "cs-extension-methods"
+    languages: ["C#"]
+    name: "Extension Method Helpers"
+    category: "Code Injection"
+    summary: >
+      Injects C# helper code that adds extension methods on top of generated
+      wrappers for more idiomatic APIs.
+    usage:
+      C#: |
+        #ifdef SWIGCSHARP
+        %pragma(csharp) modulecode=%{
+          public static class WidgetExtensions {
+            public static string Describe(this Widget w) {
+              return "Widget#" + w.Id;
+            }
+          }
+        %}
+        #endif
+
+  - id: "cs-events"
+    languages: ["C#"]
+    name: "Delegate / Event Projection"
+    category: "Interoperability"
+    summary: >
+      Projects callback registration APIs into delegates or event-like C#
+      wrappers for a more idiomatic consumer experience.
+    usage:
+      C#: |
+        #ifdef SWIGCSHARP
+        // Typically implemented with directors, delegates, and custom glue.
+        #endif
+
+  - id: "cs-async-task"
+    languages: ["C#"]
+    name: "Task-based Async Wrappers"
+    category: "Interoperability"
+    summary: >
+      Adds C# Task-returning helper methods around blocking native calls so
+      applications can await them naturally.
+    usage:
+      C#: |
+        #ifdef SWIGCSHARP
+        %pragma(csharp) modulecode=%{
+          using System.Threading.Tasks;
+          public static partial class example {
+            public static Task<int> ComputeAsync(int x) {
+              return Task.Run(() => compute(x));
+            }
+          }
+        %}
+        #endif
+
+  - id: "cs-xml-doc"
+    languages: ["C#"]
+    name: "XML Documentation Injection"
+    category: "Documentation"
+    summary: >
+      Injects XML-style documentation comments or wrapper-side helper docs for
+      generated C# APIs.
+    usage:
+      C#: |
+        #ifdef SWIGCSHARP
+        // Usually emitted through custom pragmas or post-generation hooks.
+        #endif
+
+  # --------------------------------------------------------------------------
+  # Ruby
+  # --------------------------------------------------------------------------
+
+  - id: "ruby-mixins"
+    languages: ["Ruby"]
+    name: "Module Mixins"
+    category: "Object Model"
+    summary: >
+      Mixes Ruby modules such as Enumerable or Comparable into wrapped classes
+      to make them behave more like native Ruby objects.
+    usage:
+      Ruby: |
+        #ifdef SWIGRUBY
+        %mixin Container "Enumerable";
+        %rename("each") Container::forEach;
+        #endif
+
+  - id: "ruby-to-s"
+    languages: ["Ruby"]
+    name: "to_s / inspect Customization"
+    category: "Object Model"
+    summary: >
+      Maps C++ string conversion methods onto Ruby's to_s and inspect
+      protocol for better REPL and console output.
+    usage:
+      Ruby: |
+        #ifdef SWIGRUBY
+        %rename("to_s") Vector::toString;
+        %alias  Vector::toString "inspect";
+        #endif
+
+  - id: "ruby-attr-accessors"
+    languages: ["Ruby"]
+    name: "Attribute-style Accessors"
+    category: "Object Model"
+    summary: >
+      Exposes getter/setter methods in Ruby-style property form for more
+      idiomatic object manipulation.
+    usage:
+      Ruby: |
+        #ifdef SWIGRUBY
+        %rename("value")  Sensor::getValue;
+        %rename("value=") Sensor::setValue;
+        #endif
+
+  - id: "ruby-block-iterators"
+    languages: ["Ruby"]
+    name: "Block-based Iteration"
+    category: "Object Model"
+    summary: >
+      Exposes native iteration APIs through Ruby block patterns such as each.
+    usage:
+      Ruby: |
+        #ifdef SWIGRUBY
+        %rename("each") IntVector::forEach;
+        #endif
+
+  - id: "ruby-comparable"
+    languages: ["Ruby"]
+    name: "Comparable Semantics"
+    category: "Object Model"
+    summary: >
+      Maps comparison-style native methods onto Ruby's Comparable ecosystem.
+    usage:
+      Ruby: |
+        #ifdef SWIGRUBY
+        %mixin Version "Comparable";
+        %rename("<=>") Version::compare;
+        #endif
+
+  - id: "ruby-keyword-shim"
+    languages: ["Ruby"]
+    name: "Keyword Argument Adapter"
+    category: "Interoperability"
+    summary: >
+      Adds Ruby helper code that adapts hashes or named arguments to native
+      APIs that otherwise expose positional signatures.
+    usage:
+      Ruby: |
+        #ifdef SWIGRUBY
+        %rubycode %{
+        module Example
+          def self.open_with(opts = {})
+            open(opts.fetch(:path), opts.fetch(:mode, "r"))
+          end
+        end
+        %}
+        #endif
+
+  - id: "ruby-gc-hooks"
+    languages: ["Ruby"]
+    name: "GC Lifecycle Hooks"
+    category: "Memory Management"
+    summary: >
+      Customizes how wrapped objects interact with Ruby GC ownership and
+      finalization semantics.
+    usage:
+      Ruby: |
+        #ifdef SWIGRUBY
+        // Often implemented with custom mark/free functions and typemaps.
+        #endif
+
+  # --------------------------------------------------------------------------
+  # Lua
+  # --------------------------------------------------------------------------
+
+  - id: "lua-metatables"
+    languages: ["Lua"]
+    name: "Custom Metatable Indexing"
+    category: "Object Model"
+    summary: >
+      Overrides metatable behavior such as __index and __newindex for dynamic
+      field-style access and custom dispatch behavior.
+    usage:
+      Lua: |
+        #ifdef SWIGLUA
+        %luacode %{
+        local mt = getmetatable(Vector)
+        mt.__tostring = function(v)
+          return string.format("(%f, %f)", v.x, v.y)
+        end
+        %}
+        #endif
+
+  - id: "lua-length"
+    languages: ["Lua"]
+    name: "Length Metamethod"
+    category: "Object Model"
+    summary: >
+      Maps size-like native methods onto Lua's # operator through __len.
+    usage:
+      Lua: |
+        #ifdef SWIGLUA
+        %rename(__len) Buffer::size;
+        #endif
+
+  - id: "lua-call"
+    languages: ["Lua"]
+    name: "Callable Metamethod"
+    category: "Object Model"
+    summary: >
+      Maps functor-style native objects onto Lua's __call metamethod.
+    usage:
+      Lua: |
+        #ifdef SWIGLUA
+        %rename(__call) Functor::operator();
+        #endif
+
+  - id: "lua-table-conversion"
+    languages: ["Lua"]
+    name: "Lua Table Typemaps"
+    category: "Type Mapping"
+    summary: >
+      Converts Lua tables to and from native vectors, maps, or structs using
+      custom typemaps.
+    usage:
+      Lua: |
+        #ifdef SWIGLUA
+        // Usually implemented with custom typemap(in)/(out) definitions.
+        #endif
+
+  - id: "lua-coroutine-shims"
+    languages: ["Lua"]
+    name: "Coroutine-friendly Wrapper Shims"
+    category: "Interoperability"
+    summary: >
+      Adds Lua-side helper wrappers so expensive native operations can be
+      staged or integrated with coroutine-based application structure.
+    usage:
+      Lua: |
+        #ifdef SWIGLUA
+        %luacode %{
+        function compute_as

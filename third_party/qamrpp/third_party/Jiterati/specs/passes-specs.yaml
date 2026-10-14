@@ -1,0 +1,98 @@
+schema_version: 1
+passes:
+  - name: CFGAnalysis
+    category: analysis
+    description: Builds predecessor, successor, entry, and reachability information for TAC functions.
+    required_analyses: []
+    invalidated_analyses: []
+    preserved_analyses: [all]
+    inputs: [function]
+    outputs: [cfg]
+    configurable_options: []
+    execution_order_constraints: must run after structural parse and before passes that need CFG facts
+    parallel_safety: function-local and parallel-safe across independent functions
+    deterministic_behavior: true
+  - name: DominatorAnalysis
+    category: analysis
+    description: Computes dominator sets or immediate dominators from CFG information.
+    required_analyses: [CFGAnalysis]
+    invalidated_analyses: []
+    preserved_analyses: [CFGAnalysis]
+    inputs: [cfg]
+    outputs: [dominators]
+    configurable_options: []
+    execution_order_constraints: requires valid terminators
+    parallel_safety: function-local
+    deterministic_behavior: true
+  - name: LivenessAnalysis
+    category: analysis
+    description: Computes live-in and live-out sets for temporaries and parameters.
+    required_analyses: [CFGAnalysis]
+    invalidated_analyses: []
+    preserved_analyses: [CFGAnalysis, DominatorAnalysis]
+    inputs: [function, cfg]
+    outputs: [liveness]
+    configurable_options: []
+    execution_order_constraints: run after transformations that introduce or delete values
+    parallel_safety: function-local
+    deterministic_behavior: true
+  - name: ConstantFolding
+    category: transform
+    description: Replaces operations on literal operands with equivalent constants.
+    required_analyses: []
+    invalidated_analyses: [LivenessAnalysis]
+    preserved_analyses: [CFGAnalysis, DominatorAnalysis]
+    inputs: [function]
+    outputs: [function]
+    configurable_options: []
+    execution_order_constraints: usually before constant propagation and dead-code removal
+    parallel_safety: function-local
+    deterministic_behavior: true
+  - name: ConstantPropagation
+    category: transform
+    description: Propagates known constant values through uses when safe.
+    required_analyses: [CFGAnalysis]
+    invalidated_analyses: [LivenessAnalysis, DominatorAnalysis]
+    preserved_analyses: [CFGAnalysis]
+    inputs: [function]
+    outputs: [function]
+    configurable_options: []
+    execution_order_constraints: after constant folding or before cleanup passes
+    parallel_safety: function-local
+    deterministic_behavior: true
+  - name: DeadCodeRemoval
+    category: transform
+    description: Removes side-effect-free instructions whose results are unused.
+    required_analyses: [LivenessAnalysis]
+    invalidated_analyses: [LivenessAnalysis]
+    preserved_analyses: [CFGAnalysis]
+    inputs: [function, liveness]
+    outputs: [function]
+    configurable_options: []
+    execution_order_constraints: after simplification passes
+    parallel_safety: function-local
+    deterministic_behavior: true
+  - name: StrengthReduction
+    category: transform
+    description: Replaces expensive operations with cheaper equivalent operations.
+    required_analyses: []
+    invalidated_analyses: [LivenessAnalysis]
+    preserved_analyses: [CFGAnalysis]
+    inputs: [function]
+    outputs: [function]
+    configurable_options: []
+    execution_order_constraints: after canonicalization and before backend lowering
+    parallel_safety: function-local
+    deterministic_behavior: true
+  - name: PeepholeOptimization
+    category: transform
+    description: Applies small local rewrites to adjacent or single instructions.
+    required_analyses: []
+    invalidated_analyses: [LivenessAnalysis]
+    preserved_analyses: [CFGAnalysis]
+    inputs: [function]
+    outputs: [function]
+    configurable_options: []
+    execution_order_constraints: late in the generic pipeline and optionally again in target pipelines
+    parallel_safety: function-local
+    deterministic_behavior: true

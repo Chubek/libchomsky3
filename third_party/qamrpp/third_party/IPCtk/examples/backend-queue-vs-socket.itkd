@@ -1,0 +1,11 @@
+target python
+capability socket
+capability pubsub
+capability codec
+
+rule recv = sock_recv(${arg0})
+rule send = sock_send(${arg0})
+rule enqueue = queue_put(${arg0})
+rule dequeue = queue_get(${arg0})
+rule decode = decode_payload(${arg0})
+rule encode = encode_payload(${arg0})

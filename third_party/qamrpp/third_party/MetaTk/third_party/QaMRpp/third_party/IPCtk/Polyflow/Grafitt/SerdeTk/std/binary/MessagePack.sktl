@@ -1,0 +1,63 @@
+format MessagePack
+category binary
+extensions .msgpack .mpack
+mime application/msgpack
+encoding binary
+adapter JSONAdapter
+
+identity {
+  canonical-name MessagePack
+  description MessagePack binary container projected via common model
+}
+
+model {
+  root any
+  object map
+  array sequence
+  scalar-types null boolean int uint double string binary
+  ext-types support placeholder
+}
+
+binary-layout {
+  endian network
+  container-length prefix
+  map-key-type string
+  timestamp support optional
+}
+
+parse {
+  input bytes
+  strategy tag-dispatch
+  map policy object
+  array policy array
+  binary policy binary-value
+  ext policy binary-fallback
+}
+
+dump {
+  output bytes
+  strategy tag-encode
+  map-key-order source
+  numeric canonical
+}
+
+query {
+  engines API STKQ JQ SPARQL
+  default-engine API
+}
+
+validation {
+  standards JSON-Schema
+  mode via-json-adapter
+}
+
+conversion {
+  adapters JSONAdapter YAML.JSONAdapter XML.JSONAdapter BSON.JSONAdapter
+  loss-reporting required
+  risks ext-type-loss integer-width-narrowing
+}
+
+binarization {
+  source JSON YAML XML
+  entrypoint json::Binarize<msgpack::JSONAdapter>
+}

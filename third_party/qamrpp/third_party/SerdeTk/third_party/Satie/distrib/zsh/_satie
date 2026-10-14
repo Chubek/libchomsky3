@@ -1,0 +1,12 @@
+#compdef satie-cli satie-repl
+# Satie zsh completions.
+# Install: copy to a directory in $fpath (e.g. /usr/local/share/zsh/site-functions/)
+
+local -a engines
+engines=(native dpll cdcl)
+
+_arguments -C \
+  '(- :)'{-h,--help}'[show help]' \
+  '--engine[solver backend]:engine:(native dpll cdcl)' \
+  '--model[print satisfying model]' \
+  '::file:_files'

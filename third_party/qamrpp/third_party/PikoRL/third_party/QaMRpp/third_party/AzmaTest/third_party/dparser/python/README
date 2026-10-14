@@ -1,0 +1,21 @@
+This module was created by Brian Sabbey (sabbey at u.washington.edu).
+
+See index.html for details.
+
+To make:
+  make
+
+To make with clang-10:
+  CC=clang-10 LDSHARED="clang-10 -shared" make
+
+To install:
+  sudo DESTDIR=/ make install
+
+Thanks to:
+
+	Brennan Evans for more general unix support.
+
+	Milosz Krajewski for non-unix support (mostly superseded by binary table support in d parser) and directory independence.
+
+	Yves Forkl for bugs, usability suggestions, and emacs lisp code to jump to syntax error location.
+

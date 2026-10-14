@@ -1,0 +1,25 @@
+@PACKAGE_INIT@
+
+set(MetaTk_FOUND TRUE)
+set(MetaTk_AVAILABLE_COMPONENTS @METATK_AVAILABLE_COMPONENTS@)
+
+if(NOT MetaTk_FIND_COMPONENTS)
+  set(MetaTk_FIND_COMPONENTS ${MetaTk_AVAILABLE_COMPONENTS})
+endif()
+
+include(CMakeFindDependencyMacro)
+
+foreach(_metatk_component IN LISTS MetaTk_FIND_COMPONENTS)
+  if(NOT _metatk_component IN_LIST MetaTk_AVAILABLE_COMPONENTS)
+    set(MetaTk_NOT_FOUND_MESSAGE
+      "Unsupported MetaTk component: ${_metatk_component}. Available components: ${MetaTk_AVAILABLE_COMPONENTS}"
+    )
+    set(MetaTk_FOUND FALSE)
+    return()
+  endif()
+
+  find_dependency(${_metatk_component})
+  set(MetaTk_${_metatk_component}_FOUND TRUE)
+endforeach()
+
+check_required_components(MetaTk)

@@ -1,0 +1,475 @@
+$XFeats: v1.0.0
+$Schema: "http://warble.ir:8000/XFeats.schema.json"
+$Description: >
+  XFeats are reusable, project-agnostic binding transformations for SWIG-based
+  interfaces. Each XFeat encapsulates a specific language-level adaptation,
+  abstraction, or idiomatic enhancement that can be applied independently to a
+  C/C++ API when generating bindings.
+
+  XFeats operate at the interface layer and do not depend on domain-specific
+  semantics. They define how native constructs (functions, structs, pointers,
+  errors, lifetimes) are exposed in a target language in a way that feels
+  natural, safe, and idiomatic.
+
+  XFeats are:
+    - Self-contained (no implicit dependencies)
+    - Composable (can be grouped into Super XFeats)
+    - Portable (applicable across projects)
+    - Declarative (describe transformations, not implementations)
+
+xfeats:
+
+  universal:
+
+    - name: null_check_guard
+      description: |
+        Automatically guard against NULL pointer returns.
+
+        Example:
+          ptr = lib.get_object()
+          if ptr is None:
+              raise RuntimeError("Null pointer")
+
+      swig_flags: []
+
+      implementation: |
+        Use %exception or typemaps to check for NULL and raise language errors.
+
+
+    - name: string_conversion
+      description: |
+        Convert C strings (char*) into native string types.
+
+        Example:
+          name = lib.get_name()
+
+      swig_flags: []
+
+      implementation: |
+        Apply typemap for char* → native string.
+
+
+    - name: buffer_to_array
+      description: |
+        Convert raw buffers into native arrays/lists.
+
+        Example:
+          arr = lib.get_values()
+
+      swig_flags: []
+
+      implementation: |
+        Map pointer + length to array container.
+
+
+    - name: enum_mapping
+      description: |
+        Map C enums to language-native enums.
+
+        Example:
+          if status == Status.OK:
+              ...
+
+      swig_flags: []
+
+      implementation: |
+        Use SWIG enum support or custom wrappers.
+
+
+    - name: bitflag_helpers
+      description: |
+        Provide helpers for bitmask flags.
+
+        Example:
+          flags = Flags.READ | Flags.WRITE
+
+      swig_flags: []
+
+      implementation: |
+        Generate constants and helper methods.
+
+
+    - name: immutable_view
+      description: |
+        Expose read-only views of structures.
+
+        Example:
+          val = obj.value  # no setter
+
+      swig_flags: []
+
+      implementation: |
+        Remove setters or wrap fields.
+
+
+    - name: copy_on_write
+      description: |
+        Implement copy-on-write semantics.
+
+        Example:
+          new_obj = obj.copy()
+
+      swig_flags: []
+
+      implementation: |
+        Clone underlying structure on mutation.
+
+
+    - name: reference_counting
+      description: |
+        Manage shared ownership via ref counting.
+
+      swig_flags: []
+
+      implementation: |
+        Increment/decrement in wrappers.
+
+
+    - name: opaque_pointer
+      description: |
+        Hide struct internals.
+
+        Example:
+          Context* ctx;
+
+      swig_flags: []
+
+      implementation: |
+        Forward declare structs.
+
+
+    - name: size_t_safe
+      description: |
+        Safely map size_t across languages.
+
+      swig_flags: []
+
+      implementation: |
+        Use typemaps to avoid truncation.
+
+
+    - name: callback_adapter
+      description: |
+        Adapt C callbacks into language lambdas.
+
+        Example:
+          lib.set_callback(lambda x: print(x))
+
+      swig_flags: []
+
+      implementation: |
+        Wrap function pointers.
+
+
+    - name: variadic_adapter
+      description: |
+        Adapt variadic functions.
+
+        Example:
+          log("a", "b", "c")
+
+      swig_flags: []
+
+      implementation: |
+        Wrap with array-based interface.
+
+
+    - name: logging_hook
+      description: |
+        Inject logging into native calls.
+
+      swig_flags: []
+
+      implementation: |
+        Wrap functions with logging.
+
+
+    - name: profiling_hook
+      description: |
+        Measure execution time.
+
+      swig_flags: []
+
+      implementation: |
+        Add timing wrappers.
+
+
+    - name: thread_safe_wrapper
+      description: |
+        Add mutex protection.
+
+      swig_flags: []
+
+      implementation: |
+        Wrap calls with locks.
+
+
+    - name: lazy_initialization
+      description: |
+        Initialize resources on first use.
+
+      swig_flags: []
+
+      implementation: |
+        Delay creation until needed.
+
+
+    - name: eager_validation
+      description: |
+        Validate inputs before native call.
+
+      swig_flags: []
+
+      implementation: |
+        Add argument checks.
+
+
+    - name: range_check
+      description: |
+        Ensure numeric arguments are valid.
+
+      swig_flags: []
+
+      implementation: |
+        Inject bounds checks.
+
+
+    - name: default_arguments
+      description: |
+        Provide default values.
+
+        Example:
+          lib.compute(x, y=10)
+
+      swig_flags: []
+
+      implementation: |
+        Wrap functions with overloads.
+
+
+    - name: named_arguments
+      description: |
+        Enable keyword-style calls.
+
+      swig_flags: []
+
+      implementation: |
+        Generate wrapper functions.
+
+
+    - name: result_tuple
+      description: |
+        Return multiple values as tuple.
+
+        Example:
+          a, b = lib.compute()
+
+      swig_flags: []
+
+      implementation: |
+        Pack outputs.
+
+
+    - name: error_code_to_bool
+      description: |
+        Convert int error codes to boolean.
+
+      swig_flags: []
+
+      implementation: |
+        Map 0 → True, else False.
+
+
+    - name: documentation_injection
+      description: |
+        Inject docstrings/comments.
+
+      swig_flags: []
+
+      implementation: |
+        Use %feature("docstring").
+
+
+    - name: symbol_renaming
+      description: |
+        Rename symbols to idiomatic style.
+
+      swig_flags: []
+
+      implementation: |
+        Use %rename.
+
+
+    - name: namespace_flattening
+      description: |
+        Flatten nested namespaces.
+
+      swig_flags: []
+
+      implementation: |
+        Adjust naming in interface.
+
+
+    - name: type_aliasing
+      description: |
+        Provide user-friendly type names.
+
+      swig_flags: []
+
+      implementation: |
+        Use typedef wrappers.
+
+
+    - name: constant_grouping
+      description: |
+        Group constants into objects.
+
+      swig_flags: []
+
+      implementation: |
+        Generate container classes.
+
+
+    - name: auto_free_return
+      description: |
+        Automatically free returned memory.
+
+      swig_flags: []
+
+      implementation: |
+        Attach destructor to return.
+
+
+    - name: deep_copy_struct
+      description: |
+        Return deep copies instead of pointers.
+
+      swig_flags: []
+
+      implementation: |
+        Clone data.
+
+
+    - name: shallow_view_struct
+      description: |
+        Return lightweight references.
+
+      swig_flags: []
+
+      implementation: |
+        Return pointer-backed objects.
+
+
+    - name: iterator_adapter
+      description: |
+        Convert collections into iterators.
+
+        Example:
+          for x in lib.items():
+              ...
+
+      swig_flags: []
+
+      implementation: |
+        Wrap indexing logic.
+
+
+    - name: index_access
+      description: |
+        Provide [] operator access.
+
+      swig_flags: []
+
+      implementation: |
+        Map get(index).
+
+
+    - name: equality_operator
+      description: |
+        Provide equality comparison.
+
+      swig_flags: []
+
+      implementation: |
+        Compare underlying pointers/data.
+
+
+    - name: string_repr
+      description: |
+        Provide human-readable string.
+
+        Example:
+          print(obj)
+
+      swig_flags: []
+
+      implementation: |
+        Implement toString / __repr__.
+
+
+    - name: hash_support
+      description: |
+        Enable hashing for objects.
+
+      swig_flags: []
+
+      implementation: |
+        Hash pointer or content.
+
+
+    - name: clone_method
+      description: |
+        Provide explicit clone().
+
+      swig_flags: []
+
+      implementation: |
+        Wrap copy constructor.
+
+
+    - name: freeze_object
+      description: |
+        Make object immutable after creation.
+
+      swig_flags: []
+
+      implementation: |
+        Disable setters.
+
+
+    - name: dynamic_dispatch
+      description: |
+        Route calls based on argument types.
+
+      swig_flags: []
+
+      implementation: |
+        Generate dispatcher wrappers.
+
+
+    - name: super_safe_core
+      description: |
+        SUPER XFEAT:
+          - null_check_guard
+          - range_check
+          - eager_validation
+          - auto_free_return
+
+        Purpose:
+          Provide a safety-first binding layer.
+
+      swig_flags: []
+
+
+    - name: super_developer_friendly
+      description: |
+        SUPER XFEAT:
+          - documentation_injection
+          - string_repr
+          - equality_operator
+          - hash_support
+
+        Purpose:
+          Improve usability and debugging.
+
+      swig_flags: []

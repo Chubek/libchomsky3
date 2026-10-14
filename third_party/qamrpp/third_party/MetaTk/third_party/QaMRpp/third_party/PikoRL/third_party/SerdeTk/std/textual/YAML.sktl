@@ -1,0 +1,79 @@
+format YAML
+category textual
+extensions .yaml .yml
+mime application/yaml text/yaml
+encoding utf-8
+adapter JSONAdapter
+
+identity {
+  canonical-name YAML
+  description YAML 1.2 core profile mapped to serdetk::Document
+}
+
+model {
+  root any
+  object key-type string
+  array ordered true
+  scalar-types null boolean int uint double string
+  anchors policy ignore
+  tags policy best-effort-string
+}
+
+lexical {
+  indentation significant true
+  tab-indentation allow false
+  comments line-prefix "#"
+  flow-collection support true
+  block-collection support true
+  scalar plain single-quoted double-quoted
+  block-scalars literal folded
+  directives support false
+}
+
+parse {
+  strategy indentation-recursive
+  mapping key-value-separator ":"
+  sequence item-prefix "- "
+  nested-mapping support true
+  nested-sequence support true
+  inline-flow support true
+  multiline-scalars support true
+  duplicate-keys policy last-wins
+  document-markers support optional
+  merge-keys support false
+}
+
+dump {
+  style block
+  indent default 2
+  quote-policy minimal
+  emit-document-marker false
+  emit-tags false
+  emit-anchors false
+}
+
+formatting {
+  newline default "\n"
+  trailing-newline default true
+}
+
+query {
+  engines API STKQ JQ SPARQL
+  default-engine API
+}
+
+validation {
+  standards JSON-Schema
+  mode via-json-adapter
+}
+
+conversion {
+  adapters JSONAdapter XML.JSONAdapter BSON.JSONAdapter MessagePack.JSONAdapter
+  loss-reporting required
+  risks tag-loss anchor-loss merge-key-loss
+}
+
+binarization {
+  via JSONAdapter
+  targets BSON MessagePack
+}

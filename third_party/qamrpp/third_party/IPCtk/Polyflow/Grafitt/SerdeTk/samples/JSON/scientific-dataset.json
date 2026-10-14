@@ -1,0 +1,63 @@
+{
+  "experiment": {
+    "id": "EXP-44A",
+    "title": "Particle Drift Analysis",
+    "operators": [
+      {
+        "name": "Dr. Alice Ng",
+        "specializations": [
+          "fluid dynamics",
+          "thermodynamics"
+        ]
+      },
+      {
+        "name": "Dr. Omar Rahimi",
+        "specializations": [
+          "signal processing"
+        ]
+      }
+    ]
+  },
+  "runs": [
+    {
+      "run_id": 1,
+      "parameters": {
+        "temperature_k": 293.15,
+        "pressure_pa": 101325,
+        "magnetic_field_t": 0.45
+      },
+      "measurements": [
+        [0.0, 1.23e-4],
+        [0.5, 1.27e-4],
+        [1.0, 1.35e-4]
+      ],
+      "flags": {
+        "calibrated": true,
+        "outlier_detected": false
+      }
+    },
+    {
+      "run_id": 2,
+      "parameters": {
+        "temperature_k": 310.15,
+        "pressure_pa": 100120,
+        "magnetic_field_t": 0.52
+      },
+      "measurements": [],
+      "flags": {
+        "calibrated": false,
+        "outlier_detected": true
+      },
+      "notes": "Sensor saturation occurred near t=0.75s"
+    }
+  ],
+  "statistics": {
+    "mean": 0.0001283,
+    "variance": 1.92e-10,
+    "covariance_matrix": [
+      [1.0, 0.12, -0.05],
+      [0.12, 1.0, 0.41],
+      [-0.05, 0.41, 1.0]
+    ]
+  }
+}

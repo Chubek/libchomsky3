@@ -1,0 +1,3 @@
+terse module ir_signed_div_details
+fn quotient(x: i64, y: i64) -> i64 = (s/ x y)
+fn recomposed_delta(x: i64, y: i64) -> i64 = (- (+ (* (s/ x y) y) (s% x y)) x)

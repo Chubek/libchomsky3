@@ -1,0 +1,95 @@
+#include "matcheroni/Matcheroni.hpp"
+#include "matcheroni/Parseroni.hpp"
+#include "matcheroni/Utilities.hpp"
+
+using namespace matcheroni;
+using namespace parseroni;
+
+struct JsonParser {
+  // Matches any JSON number
+  using sign      = Atoms<'+', '-'>;
+  using digit     = Range<'0', '9'>;
+  using onenine   = Range<'1', '9'>;
+  using digits    = Some<digit>;
+  using integer   = Seq<Opt<Atom<'-'>>, Oneof<Seq<onenine, digits>, digit>>;
+  using fraction  = Seq<Atom<'.'>, digits>;
+  using exponent  = Seq<Atoms<'e', 'E'>, Opt<sign>, digits>;
+  using number    = Seq<integer, Opt<fraction>, Opt<exponent>>;
+
+  // Matches a JSON string that can contain valid escape characters
+  using ws     = Some<Atoms<' ', '\n', '\r', '\t'>>;
+  using hex       = Ranges<'0','9','a','f','A','F'>;
+  using escape    = Oneof<Charset<"\"\\/bfnrt">, Seq<Atom<'u'>, Rep<4, hex>>>;
+  using character = Oneof<
+    Seq<Not<Atom<'"'>>, Not<Atom<'\\'>>, Range<0x0020, 0x10FFFF>>,
+    Seq<Atom<'\\'>, escape>
+  >;
+  using string = Seq<Atom<'"'>, Any<character>, Atom<'"'>>;
+
+  // Matches the three reserved JSON keywords
+  using keyword = Oneof<Lit<"true">, Lit<"false">, Lit<"null">>;
+
+  // Matches a comma-delimited list with embedded whitespace
+  template <typename P>
+  using list = Seq<P, Any<Seq<Opt<ws>, Atom<','>, Opt<ws>, P>>>;
+
+  // Matches any valid JSON value
+  static TextSpan match_value(TextParseContext& ctx, TextSpan body) {
+    return Oneof<
+      Capture<"number",  number,  TextParseNode>,
+      Capture<"string",  string,  TextParseNode>,
+      Capture<"array",   array,   TextParseNode>,
+      Capture<"object",  object,  TextParseNode>,
+      Capture<"keyword", keyword, TextParseNode>
+    >::match(ctx, body);
+  }
+  using value = Ref<match_value>;
+
+  // Matches bracket-delimited lists of JSON values
+  using array =
+  Seq<
+    Atom<'['>,
+    Opt<ws>,
+    Opt<list<value>>,
+    Opt<ws>,
+    Atom<']'>
+  >;
+
+  // Matches a key:value pair where 'key' is a string and 'value' is a JSON value.
+  using pair =
+  Seq<
+    Capture<"key", string, TextParseNode>,
+    Opt<ws>,
+    Atom<':'>,
+    Opt<ws>,
+    Capture<"value", value, TextParseNode>
+  >;
+
+  // Matches a curly-brace-delimited list of key:value pairs.
+  using object =
+  Seq<
+    Atom<'{'>,
+    Opt<ws>,
+    Opt<list<Capture<"member", pair, TextParseNode>>>,
+    Opt<ws>,
+    Atom<'}'>
+  >;
+
+  // Matches any valid JSON document
+  static TextSpan match(TextParseContext& ctx, TextSpan body) {
+    return Seq<Opt<ws>, value, Opt<ws>>::match(ctx, body);
+  }
+};
+
+int main(int argc, char** argv) {
+  const char* filename = argc < 2 ? "json_tut2a.input" : argv[1];
+
+  std::string input = utils::read(filename);
+  TextSpan text = utils::to_span(input);
+
+  TextParseContext ctx;
+  TextSpan tail = JsonParser::match(ctx, text);
+  utils::print_summary(ctx, text, tail, 50);
+
+  return tail.is_valid() ? 0 : -1;
+}

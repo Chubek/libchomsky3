@@ -1,0 +1,22 @@
+find_package(Doxygen QUIET)
+
+if(DOXYGEN_FOUND)
+  set(PACKAGE_VERSION ${PROJECT_VERSION})
+  set(PACKAGE_HAS_DOT ${DOXYGEN_DOT_FOUND})
+  set(PACKAGE_HAS_GRAPH ${DOXYGEN_DOT_FOUND})
+  set(PACKAGE_CALLER_GRAPH ${DOXYGEN_DOT_FOUND})
+  set(PACKAGE_SOURCE_DIR ${CMAKE_SOURCE_DIR})
+
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    @ONLY
+  )
+
+  add_custom_target(docs
+    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Generating API documentation with Doxygen"
+    VERBATIM
+  )
+endif()

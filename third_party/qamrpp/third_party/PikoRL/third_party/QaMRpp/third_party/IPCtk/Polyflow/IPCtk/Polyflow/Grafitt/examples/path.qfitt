@@ -1,0 +1,5 @@
+path in "my-graphs/friendship-graph.gbin" {
+  from "Alice"
+  to "Bob"
+  shortest
+}

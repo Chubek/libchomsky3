@@ -1,0 +1,16 @@
+# polyflow.pc.in — pkg-config metadata for Polyflow
+
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+
+Name: Polyflow
+Description: C++20 header-only task concurrency library with TLA+ temporal constraints
+Version: @PROJECT_VERSION@
+URL: @PROJECT_HOMEPAGE_URL@
+
+Requires: threads
+Requires.private: grafitt, DSLUtils, ZethaMEM
+Cflags: -I${includedir} -std=c++20
+Libs:

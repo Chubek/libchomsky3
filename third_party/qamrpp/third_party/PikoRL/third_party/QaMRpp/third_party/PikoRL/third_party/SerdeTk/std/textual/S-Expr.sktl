@@ -1,0 +1,54 @@
+format S-Expr
+category textual
+extensions .sexpr .scm .lisp
+mime text/x-s-expression
+encoding utf-8
+
+identity {
+  canonical-name S-Expr
+  description Parenthesized symbolic expression format
+}
+
+model {
+  root array
+  list array
+  atom scalar
+  object-projection pair-list
+}
+
+lexical {
+  whitespace "[ \t\r\n]+"
+  comments line-prefix ";"
+  list-open "("
+  list-close ")"
+  string-delimiter '"'
+  escapes "\\\"" "\\\\" "\\n" "\\r" "\\t"
+}
+
+parse {
+  strategy stack-based
+  nesting required-balanced
+  atom-coercion null boolean int double string
+}
+
+dump {
+  style canonical
+  quote-policy strings-only
+  object-projection nested-pairs
+}
+
+query {
+  engines API STKQ
+  default-engine API
+}
+
+validation {
+  standards JSON-Schema
+  mode projected
+}
+
+conversion {
+  adapters JSONAdapter YAML.JSONAdapter XML.JSONAdapter
+  loss-reporting required
+  risks object-shape-loss symbol-string-collapse
+}

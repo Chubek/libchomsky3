@@ -340,6 +340,11 @@ chomsky3_error_t chomsky3_compiler_compile_string(
     }
 
     /* Compile AST */
+    if (regex->parse_error != CHOMSKY3_OK) {
+        err = regex->parse_error;
+        chomsky3_regex_free(regex);
+        return err;
+    }
     err = chomsky3_compiler_compile(compiler, regex, pattern);
 
     /* Free AST */

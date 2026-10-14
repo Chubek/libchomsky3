@@ -1,0 +1,106 @@
+#-----------------------------------------------------------------------
+# Project metadata
+#-----------------------------------------------------------------------
+
+PROJECT_NAME           = "@PROJECT_NAME@"
+PROJECT_BRIEF          = "API and internal documentation for the Jiterati system"
+PROJECT_LOGO           =
+
+OUTPUT_DIRECTORY       = "@DOXYGEN_OUTPUT_DIR@"
+
+#-----------------------------------------------------------------------
+# Input
+#-----------------------------------------------------------------------
+
+INPUT                  = @DOXYGEN_INPUT@
+RECURSIVE              = YES
+
+# Recognize modern project structures
+FILE_PATTERNS          = *.h *.hpp *.c *.cpp *.m *.mm *.lua *.md *.rps *.txt
+
+#-----------------------------------------------------------------------
+# Build behavior
+#-----------------------------------------------------------------------
+
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_ANON_NSPACES   = YES
+
+QUIET                  = YES
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+
+#-----------------------------------------------------------------------
+# Preprocessing
+#-----------------------------------------------------------------------
+
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = NO
+
+# Add common C/C++/Lua/RPS defines for syntax clarity (add more if needed)
+PREDEFINED             = \
+    __cplusplus \
+    RPS_EXPORT \
+    RPS_INTERNAL
+
+#-----------------------------------------------------------------------
+# Markdown / documentation features
+#-----------------------------------------------------------------------
+
+USE_MDFILE_AS_MAINPAGE = docs/frontpage.md
+
+MARKDOWN_SUPPORT        = YES
+ALPHABETICAL_INDEX      = YES
+GENERATE_TREEVIEW       = YES
+
+#-----------------------------------------------------------------------
+# Diagrams (Graphviz)
+#-----------------------------------------------------------------------
+
+HAVE_DOT                = YES
+DOT_IMAGE_FORMAT        = svg
+DOT_NUM_THREADS         = 4
+
+CALL_GRAPH              = YES
+CALLER_GRAPH            = YES
+DIRECTORY_GRAPH         = YES
+INCLUDED_BY_GRAPH       = YES
+
+#-----------------------------------------------------------------------
+# HTML output
+#-----------------------------------------------------------------------
+
+GENERATE_HTML           = YES
+HTML_OUTPUT             = html
+HTML_STYLESHEET         =
+HTML_COLORSTYLE_HUE     = 200
+
+#-----------------------------------------------------------------------
+# Man pages (useful for CLI tools in your build stack)
+#-----------------------------------------------------------------------
+
+GENERATE_MAN            = YES
+MAN_OUTPUT              = man
+
+#-----------------------------------------------------------------------
+# LaTeX PDF (disabled by default)
+#-----------------------------------------------------------------------
+
+GENERATE_LATEX          = NO
+
+#-----------------------------------------------------------------------
+# XML (ON if you intend to post-process docs)
+#-----------------------------------------------------------------------
+
+GENERATE_XML            = NO
+
+#-----------------------------------------------------------------------
+# Misc
+#-----------------------------------------------------------------------
+
+STRIP_FROM_PATH         = "@CMAKE_SOURCE_DIR@"
+FULL_PATH_NAMES         = NO

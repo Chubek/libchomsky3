@@ -1,0 +1,114 @@
+/* Mini theme system for Sphinx docs.
+ * Default: dark theme with manual light-mode override.
+ */
+:root {
+  --mz-bg: #101216;
+  --mz-text: #e7e7ec;
+  --mz-panel: #181c24;
+  --mz-border: #2f3442;
+  --mz-link: #7cb2ff;
+  --mz-accent: #6fd3ff;
+}
+
+html.stkman-theme-light {
+  --mz-bg: #fafafa;
+  --mz-text: #1e1e26;
+  --mz-panel: #ffffff;
+  --mz-border: #d6dce6;
+  --mz-link: #2859e8;
+  --mz-accent: #1c86ff;
+}
+
+body {
+  background: var(--mz-bg);
+  color: var(--mz-text);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+a {
+  color: var(--mz-link);
+}
+
+#content, .document, .bodywrapper, .wy-nav-content {
+  background: transparent;
+}
+
+.wy-nav-content-wrap,
+.wy-nav-side,
+.wy-side-scroll,
+.rst-content pre,
+.rst-content code,
+.rst-content tt {
+  background: var(--mz-panel);
+  color: var(--mz-text);
+}
+
+.wy-nav-side .toctree-wrapper ul,
+.wy-menu-vertical li.current > a {
+  color: var(--mz-text);
+}
+
+.wy-menu-vertical li.current {
+  background: rgba(111, 211, 255, 0.08);
+}
+
+.wy-side-nav-search {
+  background: linear-gradient(180deg, #1b1f2a, #121722);
+}
+
+html.stkman-theme-light .wy-side-nav-search {
+  background: var(--mz-panel);
+}
+
+.wy-side-nav-search > a,
+.wy-side-nav-search input[type="text"] {
+  color: var(--mz-text);
+}
+
+.rst-content .admonition {
+  border-left-color: var(--mz-accent);
+}
+
+.stkman-toolbar {
+  position: fixed;
+  right: 18px;
+  top: 14px;
+  z-index: 9999;
+  display: flex;
+  gap: 8px;
+}
+
+.stkman-btn {
+  border: 1px solid var(--mz-border);
+  background: var(--mz-panel);
+  color: var(--mz-text);
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.stkman-btn:hover {
+  border-color: var(--mz-link);
+}
+
+.stkman-progress {
+  position: fixed;
+  right: 18px;
+  top: 56px;
+  z-index: 9998;
+  background: var(--mz-panel);
+  color: var(--mz-text);
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--mz-border);
+  font-size: 0.8rem;
+}
+
+.highlight pre {
+  background: #0d1018;
+  border: 1px solid var(--mz-border);
+}
+
+html.stkman-theme-light .highlight pre {
+  background: #ffffff;
+}

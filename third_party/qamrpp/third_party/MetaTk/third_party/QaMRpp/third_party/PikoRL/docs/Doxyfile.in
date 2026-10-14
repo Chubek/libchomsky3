@@ -1,0 +1,40 @@
+PROJECT_NAME           = "PikoRL"
+PROJECT_NUMBER         = @PACKAGE_VERSION@
+OUTPUT_DIRECTORY       = @CMAKE_CURRENT_BINARY_DIR@/docs
+
+INPUT                  = @PACKAGE_SOURCE_DIR@/PikoRL.hpp \
+                         @PACKAGE_SOURCE_DIR@/qamrpp-lpikorl \
+                         @CMAKE_CURRENT_SOURCE_DIR@/FrontPage.md \
+                         @CMAKE_CURRENT_SOURCE_DIR@/manual
+
+FILE_PATTERNS          = *.h *.c *.cpp *.rst *.md
+RECURSIVE              = YES
+
+# Use FrontPage.md as the main page
+USE_MDFILE_AS_MAINPAGE = @CMAKE_CURRENT_SOURCE_DIR@/FrontPage.md
+
+# Enable Markdown docs
+MARKDOWN_SUPPORT       = YES
+
+GENERATE_HTML          = YES
+GENERATE_LATEX         = YES
+GENERATE_XML           = YES
+GENERATE_DOCBOOK       = YES
+
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = NO
+WARN_IF_DOC_ERROR      = YES
+
+# Extract everything for library docs
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+
+# Source browsing
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+
+# Graphs
+HAVE_DOT               = @PACKAGE_HAS_DOT@
+CALL_GRAPH             = @PACKAGE_HAS_GRAPH@
+CALLER_GRAPH           = @PACKAGE_CALLER_GRAPH@

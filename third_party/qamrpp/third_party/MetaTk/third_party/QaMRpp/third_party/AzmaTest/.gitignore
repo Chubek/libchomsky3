@@ -1,0 +1,67 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Build outputs
+build/
+dist/
+out/
+bin/
+obj/
+*.o
+*.so
+*.a
+*.dll
+*.dylib
+*.exe
+
+# Parser generator outputs
+parser.c
+parser.h
+parser_tables.c
+parser_tables.h
+scanner.c
+lexer.c
+lex.yy.c
+y.tab.c
+y.tab.h
+*.output
+
+# Generated artifacts
+*.gen.c
+*.gen.h
+*.generated.c
+*.generated.h
+
+# Test / coverage
+coverage/
+*.gcda
+*.gcno
+*.prof
+*.profraw
+*.profdata
+
+# Logs / temp
+*.log
+tmp/
+temp/
+.cache/
+
+# Package artifacts
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# Local env
+.env
+.env.*
+
+AGENTS.md
+*.sarif
+

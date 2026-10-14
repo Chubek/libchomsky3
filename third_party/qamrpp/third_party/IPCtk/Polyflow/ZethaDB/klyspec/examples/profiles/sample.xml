@@ -1,0 +1,4 @@
+<root>
+  <file>build.xml</file>
+  <profile>asan</profile>
+</root>

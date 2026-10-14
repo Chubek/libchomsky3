@@ -1,0 +1,15 @@
+{
+  "name": "bad-extra",
+  "version": "0.1.0",
+  "description": "Package with an undeclared payload file",
+  "author": "Jiterati Project",
+  "license": "MIT",
+  "homepage": "https://example.invalid/jiterati",
+  "dependencies": [],
+  "plugins": [],
+  "passes": [],
+  "backends": [],
+  "files": [
+    "META-INF/manifest.json"
+  ]
+}

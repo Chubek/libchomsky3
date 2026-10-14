@@ -1,0 +1,86 @@
+# Doxyfile.in — processed by CMake configure_file() in docs/CMakeLists.txt.
+# Variables @CMAKE_SOURCE_DIR@, @CMAKE_BINARY_DIR@ are substituted.
+
+PROJECT_NAME           = "Satie"
+PROJECT_NUMBER         = @PROJECT_VERSION@
+PROJECT_BRIEF          = "Header-only, multi-algorithm SAT solver"
+
+# --- input / output -------------------------------------------------------
+INPUT                  = @CMAKE_SOURCE_DIR@/include \
+                         @CMAKE_SOURCE_DIR@/docs \
+                         @CMAKE_SOURCE_DIR@/README.md
+RECURSIVE              = YES
+OUTPUT_DIRECTORY       = @CMAKE_BINARY_DIR@/docs/doxygen
+USE_MDFILE_AS_MAINPAGE = @CMAKE_SOURCE_DIR@/docs/FrontPage.md
+
+FILE_PATTERNS          = *.hpp *.h *.cpp *.md
+EXCLUDE_PATTERNS       = */.git/* */build/*
+
+# --- language / parsing ---------------------------------------------------
+OPTIMIZE_OUTPUT_FOR_C  = YES
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+
+# C++ parsing
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = NO
+SEARCH_INCLUDES        = YES
+INCLUDE_PATH           = @CMAKE_SOURCE_DIR@/include
+
+# --- cross-referencing ----------------------------------------------------
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+REFERENCES_LINK_SOURCE = YES
+USE_HTAGS              = NO
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+VERBATIM_HEADERS       = YES
+
+# --- structure / navigation ----------------------------------------------
+GENERATE_TREEVIEW      = YES
+DISABLE_INDEX          = NO
+FULL_SIDEBAR           = NO
+ENUM_VALUES_PER_LINE   = 4
+BUILTIN_STL_SUPPORT    = YES
+CPP_CLI_SUPPORT        = NO
+SIP_SUPPORT            = NO
+
+# --- output formats -------------------------------------------------------
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+GENERATE_MAN           = NO
+GENERATE_RTF           = NO
+GENERATE_XML           = NO
+
+HTML_OUTPUT            = html
+HTML_FILE_EXTENSION    = .html
+GENERATE_HTMLHELP      = NO
+GENERATE_DOCSET        = NO
+GENERATE_ECLIPSEHELP   = NO
+
+# --- diagrams -------------------------------------------------------------
+HAVE_DOT               = YES
+UML_LOOK               = NO
+CLASS_DIAGRAMS         = YES
+COLLABORATION_GRAPH    = YES
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+GRAPHICAL_HIERARCHY    = YES
+DIRECTORY_GRAPH        = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
+
+# --- warnings -------------------------------------------------------------
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = NO
+WARN_FORMAT            = "$file:$line: $text"
+WARN_LOGFILE           = @CMAKE_BINARY_DIR@/docs/doxygen-warn.log
+
+QUIET                  = NO

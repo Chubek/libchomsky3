@@ -1,0 +1,76 @@
+command "python"
+{
+    help-string
+    {
+        Python-like command profile with lint, test, and packaging modes
+    };
+
+    param "m/module="
+    {
+        help-string
+        {
+            Execute a module as script entrypoint
+        };
+        default = "";
+    };
+
+    param "c/code="
+    {
+        help-string
+        {
+            Inline code snippet
+        };
+        default = "";
+    };
+
+    param "O/optimize"
+    {
+        help-string
+        {
+            Enable bytecode optimization
+        };
+    };
+
+    param "u/unbuffered"
+    {
+        help-string
+        {
+            Force unbuffered stdout/stderr
+        };
+    };
+
+    param "W/warning="
+    {
+        help-string
+        {
+            Warning control (e.g. ignore::DeprecationWarning)
+        };
+        repeatable = true;
+    };
+
+    param "script"
+    {
+        positional = true;
+        required = false;
+        help-string
+        {
+            Script path when not using -m or -c
+        };
+    };
+
+    param "script_args"
+    {
+        positional = true;
+        variadic = true;
+        help-string
+        {
+            Arguments forwarded to script/module
+        };
+    };
+};
+
+pre-evaluate
+{
+    exec = "/usr/bin/env";
+    sanitize = "stdlib/shell.sh";
+};

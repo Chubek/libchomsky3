@@ -1,0 +1,28 @@
+socket h2_in = tcp.listen("127.0.0.1:8443");
+queue control_frames = mpmc.ring(512);
+queue data_frames = mpmc.ring(2048);
+signal control_ready = eventfd();
+signal data_ready = eventfd();
+mutex stream_state_lock = semaphore("/h2.streams", 1);
+
+pipe ingress =
+  recv(h2_in)
+  -> decode(http2_frame)
+  -> lock(stream_state_lock)
+  -> enqueue(control_frames)
+  -> enqueue(data_frames)
+  -> unlock(stream_state_lock)
+  -> notify(control_ready)
+  -> notify(data_ready);
+
+pipe control_loop =
+  wait(control_ready)
+  -> dequeue(control_frames)
+  -> encode(http2_settings_ack)
+  -> send(h2_in);
+
+pipe data_loop =
+  wait(data_ready)
+  -> dequeue(data_frames)
+  -> encode(http2_data)
+  -> send(h2_in);

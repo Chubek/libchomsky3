@@ -1,0 +1,6 @@
+socket rep = tcp.listen("127.0.0.1:5556");
+queue jobs = mpmc.ring(1024);
+signal ready = eventfd();
+
+pipe responder = recv(rep) -> decode(request_msg) -> enqueue(jobs) -> notify(ready);
+pipe worker = wait(ready) -> dequeue(jobs) -> encode(reply_msg) -> send(rep);

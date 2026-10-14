@@ -1,0 +1,4 @@
+@emitln(&abs(-10))
+@emitln(&min(4, 1, 7))
+@emitln(&max(4, 1, 7))
+@emitln(&clamp(20, 0, 10))

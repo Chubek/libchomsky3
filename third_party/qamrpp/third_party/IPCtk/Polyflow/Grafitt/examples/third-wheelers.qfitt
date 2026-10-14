@@ -1,0 +1,11 @@
+---
+.name "Third-Wheelers"
+.desc "Best friends of people in a romantic relationship"
+.graph "friendship-graph"
+---
+
+match in "my-graphs/friendship-graph.gbin" {
+  vertices 2 :Friend
+  edge :Relationship satisfies $bidir(@BestFriend)
+  where $only($result(1) or $result(2)) ~ $has(@Romantic)
+}

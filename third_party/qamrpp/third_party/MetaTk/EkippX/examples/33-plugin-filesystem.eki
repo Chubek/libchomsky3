@@ -1,0 +1,3 @@
+@plugin(filesystem)
+@emitln(&basename(/tmp/demo.txt))
+@emitln(&normalizepath(./a/../b/file.eki))

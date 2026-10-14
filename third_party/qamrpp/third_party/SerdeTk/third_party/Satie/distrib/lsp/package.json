@@ -1,0 +1,7 @@
+{
+  "name": "satie-lsp",
+  "version": "0.0.1",
+  "description": "Language Server Protocol scaffold for the Satie DSL (placeholder)",
+  "private": true,
+  "engines": { "node": ">=18" }
+}

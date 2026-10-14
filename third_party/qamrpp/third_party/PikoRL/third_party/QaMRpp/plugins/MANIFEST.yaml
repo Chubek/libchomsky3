@@ -1,0 +1,169 @@
+# QaMRpp plugin pack manifest for the built-in plugins directory.
+# This file describes what lives in the plugins directory and how consumers
+# are expected to use it.
+name: qa-mrpp-plugins
+version: 0.1.0
+description: >
+  Optional built-in extensions that wire into the QaMRpp runtime and CLI workflows.
+  The package includes compiler backends, serialization hooks, and utility helpers.
+repository: https://github.com/qamrpp/qamrpp
+license: MIT
+maintainer: QaMRpp Project
+category: runtime-extensions
+keywords:
+  - lua
+  - qamrpp
+  - repl
+  - compiler
+  - transpiler
+  - serde
+  - cli
+  - header-only
+
+artifacts:
+  - path: QaMRpp-Compile2C.hpp
+    type: plugin-header
+    required: true
+    provides:
+      - compile_to_c
+    depends:
+      - include/QaMRpp.hpp
+    extra_files:
+      - QaMRpp-CCBackend.hpp
+      - c_translation.hpp
+  - path: QaMRpp-Compile2WASM.hpp
+    type: plugin-header
+    required: true
+    provides:
+      - compile_to_wasm
+    depends:
+      - include/QaMRpp.hpp
+    extra_files:
+      - wasm_translation.hpp
+  - path: QaMRpp-Compile2Bytecode.hpp
+    type: plugin-header
+    required: true
+    provides:
+      - compile_to_bytecode
+    depends:
+      - include/QaMRpp.hpp
+    extra_files:
+      - bytecode_translation.hpp
+  - path: QaMRpp-CCBackend.hpp
+    type: plugin-header
+    required: true
+    provides:
+      - compile_c
+    depends:
+      - include/QaMRpp.hpp
+  - path: QaMRpp-QBF.hpp
+    type: plugin-header
+    required: false
+    provides:
+      - write_qbf
+      - read_qbf
+    depends:
+      - include/QaMRpp.hpp
+      - cstddef
+      - cstdint
+      - string
+      - vector
+  - path: QaMRpp-Dump.hpp
+    type: plugin-header
+    required: false
+    provides:
+      - set_dump_file
+      - dump hook integration
+    depends:
+      - include/QaMRpp.hpp
+  - path: QaMRpp-Readline.hpp
+    type: plugin-header
+    required: false
+    provides:
+      - polyrl_read
+      - polyrl_history_add
+      - polyrl_complete
+    depends:
+      - include/QaMRpp.hpp
+      - readline-like terminal control utilities (optional)
+    extra_files:
+      - include/QaMRpp.hpp
+  - path: QaMRpp-Serialize2JSON.hpp
+    type: plugin-header
+    required: false
+    provides:
+      - serialize_program
+      - get_serialized_program
+    depends:
+      - include/QaMRpp.hpp
+      - vector
+      - string
+  - path: QaMRpp-PrintAST.hpp
+    type: plugin-header
+    required: false
+    provides:
+      - print_ast
+      - AST debug hook integration
+    depends:
+      - include/QaMRpp.hpp
+  - path: QaMRpp-PrintAST.cpp
+    type: helper-source
+    required: false
+    note: not required when using headers directly
+  - path: c_translation.hpp
+    type: helper-header
+    required: false
+  - path: wasm_translation.hpp
+    type: helper-header
+    required: false
+  - path: bytecode_translation.hpp
+    type: helper-header
+    required: false
+
+runtime_notes:
+  load_method: |-
+    Plugins are header-only and integrate via `qamrpp::Extension` by directly including headers.
+    Include the plugin header and call your plugin's install routine, or adapt to a dedicated installer that
+    invokes `ctx.add_extension(...)` with a `qamrpp::Extension`.
+  supported_runtime: C++ runtime + CLI
+  default_includes:
+    - include/QaMRpp.hpp
+    - plugins/
+
+use_cases:
+  - building custom translators inside CLI extensions
+  - emitting C/WASM/bytecode artifacts from parsed IR
+  - enabling AST diagnostics and JSON tracing from plugin hooks
+  - custom REPL readline + completion behavior
+  - simple on-disk IR payload workflows via QBF
+
+usage_examples:
+  include_from_program: |-
+    // qamrpp program with manual plugin installation:
+    #include "plugins/QaMRpp-Compile2C.hpp"
+    #include "plugins/QaMRpp-QBF.hpp"
+
+    qamrpp::Context ctx;
+    // call each plugin's install function/entrypoint in your local integration layer
+    // compile2c::install(ctx);
+    // qbf::install(ctx);
+  include_cli_plugin: |-
+    // include headers under the plugins directory into custom CLI tooling
+    #include "plugins/QaMRpp-Compile2C.hpp"
+    #include "plugins/QaMRpp-Dump.hpp"
+    #include "plugins/QaMRpp-Serialize2JSON.hpp"
+
+  build_with_qmake_or_cmake: |-
+    # Add project/plugins to include paths and include headers directly.
+    # No shared library install is required because plugins are header-only.
+
+limitations:
+  - header compatibility requires the same or newer QaMRpp core API
+  - some helper sources are optional and only included by translation units that use them
+
+install_paths:
+  plugins_root: ${QAMRPP_HOME}/plugins
+  examples:
+    - qamrpp-cli registers a subset of these plugins by default
+  fallback_when_qamrpp_home_missing:
+    - ~/.qamrpp/plugins

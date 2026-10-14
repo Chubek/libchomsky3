@@ -1,0 +1,25 @@
+# stdlib runtime modules
+option(INSTALL_STDLIB_TO_SYSTEM_LIB "Install stdlib modules into system libdir" OFF)
+
+if(INSTALL_STDLIB_TO_SYSTEM_LIB)
+  set(_QAMRPP_STDLIB_LIBDIR "${CMAKE_INSTALL_LIBDIR}")
+else()
+  set(_QAMRPP_STDLIB_LIBDIR "${QAMRPP_HOME}")
+endif()
+
+function(add_qamrpp_stdlib name)
+  add_library(qamrpp_${name} SHARED ${name}.c $<TARGET_OBJECTS:qamrpp_library>)
+  set_target_properties(qamrpp_${name} PROPERTIES PREFIX "libqamrpp_" OUTPUT_NAME "${name}")
+  install(TARGETS qamrpp_${name} LIBRARY DESTINATION ${_QAMRPP_STDLIB_LIBDIR})
+endfunction()
+
+add_qamrpp_stdlib(core)
+add_qamrpp_stdlib(string)
+add_qamrpp_stdlib(table)
+add_qamrpp_stdlib(math)
+add_qamrpp_stdlib(io)
+add_qamrpp_stdlib(os)
+add_qamrpp_stdlib(debug)
+add_qamrpp_stdlib(coroutine)
+add_qamrpp_stdlib(package)
+add_qamrpp_stdlib(utf8)

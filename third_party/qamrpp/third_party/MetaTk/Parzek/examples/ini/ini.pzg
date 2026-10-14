@@ -1,0 +1,11 @@
+@parser:name(IniLike)
+@parser:start(config)
+WS: [ \t\r\n]+ -> @IGNORE;
+LBRACKET: "[";
+RBRACKET: "]";
+EQ: "=";
+KEY: [a-zA-Z_]+;
+VALUE: [a-zA-Z0-9_]+;
+section: LBRACKET ~ KEY ~ RBRACKET;
+entry: KEY ~ EQ ~ VALUE;
+config: section entry*;

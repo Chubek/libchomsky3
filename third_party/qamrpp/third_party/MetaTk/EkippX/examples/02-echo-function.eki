@@ -1,0 +1,1 @@
+@emitln(&echo(alpha, beta))

@@ -1,0 +1,8 @@
+socket ingress = uds.listen("/tmp/orders.sock");
+socket egress = uds.connect("/tmp/ledger.sock");
+queue outbound = mpmc.ring(256);
+mutex state_lock = semaphore("/svc.state", 1);
+signal has_work = eventfd();
+
+pipe intake = recv(ingress) -> decode(order_msg) -> lock(state_lock) -> enqueue(outbound) -> unlock(state_lock) -> notify(has_work);
+pipe dispatch = wait(has_work) -> dequeue(outbound) -> encode(ledger_msg) -> send(egress);

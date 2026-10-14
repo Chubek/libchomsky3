@@ -1,0 +1,2 @@
+@emitln(&csvjoin(alpha, `b,c`, gamma))
+@emitln(&csvsplit(`alpha,\"b,c\",gamma`))

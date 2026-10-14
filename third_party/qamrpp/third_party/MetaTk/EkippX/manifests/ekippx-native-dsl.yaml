@@ -1,0 +1,498 @@
+EkippXNativeDSLAPI:
+  meta:
+    name: "EkippX Native DSL API"
+    host_header: "EkippX.hpp"
+    substrate_header: "DSLtk.hpp"
+    kind: "header-only-cpp-library"
+    status: "tightened-baseline"
+    version: "0.1"
+    namespace: "ekippx::dsl"
+    description: >
+      Native embedded DSL surface for EkippX, exposed from EkippX.hpp under
+      ekippx::dsl and implemented on top of the DSLtk.hpp substrate. This API
+      provides a C++-native way to define syntax, rules, pattern matching,
+      expression behavior, pipeline composition, and parser/combinatory logic
+      for EkippX macros and language extensions.
+
+  language:
+    standard: "C++20"
+    style: "header-only embedded DSL"
+    implementation_model: "CRTP + feature mixins + constexpr-friendly composition"
+    primary_paradigms:
+      - "expression templates"
+      - "combinatory parsing"
+      - "callable/lambda-driven rule construction"
+      - "compile-time string tagging"
+      - "pattern matching"
+      - "rewriting"
+
+  ownership:
+    public_namespace: "ekippx::dsl"
+    implementation_source_of_truth: "DSLtk.hpp"
+    embedding_header: "EkippX.hpp"
+    relationship:
+      - "EkippX.hpp exposes the native DSL surface"
+      - "DSLtk.hpp supplies the DSL construction substrate"
+      - "The DSL is part of the EkippX public C++ API, not a separate runtime"
+
+  design_principles:
+    - "Keep the native DSL fully C++-idiomatic and header-only"
+    - "Build the DSL as a thin EkippX-facing layer over DSLtk primitives"
+    - "Favor lambda-first rule, predicate, and macro construction"
+    - "Support compile-time pattern tags via fixed strings"
+    - "Compose behavior through features rather than monolithic inheritance"
+    - "Allow parser, rewrite, AST, and expression facilities to interoperate"
+    - "Preserve embeddability inside normal host-side C++ code"
+
+  source_basis:
+    confirmed_from_substrate:
+      - name: "dsl::FixedString"
+        kind: "template struct"
+        role: "compile-time fixed string NTTP carrier"
+      - name: "dsl::DSL"
+        kind: "template CRTP base"
+        role: "base class for user-defined DSLs"
+      - name: "dsl::Operators"
+        kind: "feature tag"
+        role: "operator/predicate extension point"
+      - name: "dsl::pattern"
+        kind: "template struct"
+        role: "compile-time pattern tag with matching support"
+    forward_declared_feature_families:
+      - "Pipeline"
+      - "PatternMatch"
+      - "AST"
+      - "Rewrite"
+      - "ExprTemplates"
+      - "CustomLiterals"
+      - "Memoization"
+      - "LazyFeature"
+      - "Monadic"
+      - "ResultFeature"
+      - "CombinatorParser"
+      - "TaskPipeline"
+
+  namespaces:
+    public:
+      - "ekippx::dsl"
+      - "ekippx::dsl::ast"
+      - "ekippx::dsl::rewrite"
+      - "ekippx::dsl::parse"
+      - "ekippx::dsl::literals"
+      - "ekippx::dsl::detail"
+    rules:
+      - "ekippx::dsl is the stable public native DSL namespace"
+      - "ekippx::dsl::detail is non-stable implementation support"
+      - "public APIs mirror DSLtk concepts but use EkippX naming and integration points"
+
+  aliases:
+    - name: "String"
+      target: "std::string"
+    - name: "StringView"
+      target: "std::string_view"
+    - name: "Size"
+      target: "std::size_t"
+
+  core_concepts:
+    - name: "Feature"
+      description: >
+        A composable capability tag or mixin family used to assemble a DSL type.
+        Features are combined through the CRTP root and selectively enable syntax,
+        operators, AST handling, parser combinators, rewrite rules, literals, or
+        lazy/result semantics.
+    - name: "Predicate"
+      description: >
+        A callable boolean-like condition object intended to participate in DSL
+        composition, filtering, matching, or guarded transformations.
+    - name: "Pattern"
+      description: >
+        A compile-time pattern tag backed by a fixed string and used to match
+        input text in native DSL rules.
+    - name: "Rule"
+      description: >
+        A lambda-friendly transformation, parser, rewrite, or expansion clause
+        defined in C++ and attached to the EkippX DSL environment.
+    - name: "Expression"
+      description: >
+        A typed DSL node or deferred computation participating in operator,
+        rewrite, or template-based expression composition.
+
+  templates:
+    - name: "FixedString"
+      kind: "template"
+      template_parameters:
+        - "std::size_t N"
+      exposed_as: "ekippx::dsl::FixedString"
+      derived_from: "dsl::FixedString"
+      purpose: "compile-time string holder for NTTP-based DSL APIs"
+      constructors:
+        - "constexpr FixedString(const char (&s)[N])"
+      methods:
+        - "constexpr std::string_view view() const"
+        - "constexpr bool operator==(const FixedString&) const"
+      notes:
+        - "Enables APIs like pattern tags and custom literal-like declarations"
+        - "Should be preserved as constexpr-friendly and trivially embeddable"
+
+    - name: "DSL"
+      kind: "template"
+      template_parameters:
+        - "typename Derived"
+        - "typename... Features"
+      exposed_as: "ekippx::dsl::DSL"
+      derived_from: "dsl::DSL"
+      purpose: "CRTP root for defining a user-facing EkippX native DSL type"
+      methods:
+        - "protected constexpr Derived& self() noexcept"
+        - "protected constexpr const Derived& self() const noexcept"
+      notes:
+        - "Feature composition is the primary extension mechanism"
+        - "EkippX-native DSL types should inherit from this root"
+
+    - name: "pattern"
+      kind: "template"
+      template_parameters:
+        - "FixedString S"
+      exposed_as: "ekippx::dsl::pattern"
+      derived_from: "dsl::pattern"
+      purpose: "compile-time textual pattern tag for matching rules"
+      members:
+        - "static constexpr std::string_view value"
+      methods:
+        - "static constexpr bool matches(std::string_view input)"
+      notes:
+        - "Intended for when/match style clause definitions"
+        - "Supports minimal regex-like pattern behavior through substrate logic"
+
+  feature_tags:
+    confirmed:
+      - name: "Operators"
+        exposed_as: "ekippx::dsl::Operators"
+        derived_from: "dsl::Operators"
+        purpose: "enables operator and predicate-oriented DSL behavior"
+        mixins:
+          - "template <typename Derived> struct Mixin"
+        functions:
+          - "template <typename F> static constexpr auto make_pred(F&& f)"
+    planned_from_substrate_model:
+      - name: "Pipeline"
+        exposed_as: "ekippx::dsl::Pipeline"
+        purpose: "pipeline chaining and staged composition"
+      - name: "PatternMatch"
+        exposed_as: "ekippx::dsl::PatternMatch"
+        purpose: "match/when/otherwise style branching"
+      - name: "AST"
+        exposed_as: "ekippx::dsl::AST"
+        purpose: "typed syntax tree construction and traversal"
+      - name: "Rewrite"
+        exposed_as: "ekippx::dsl::Rewrite"
+        purpose: "rule-based transformation and normalization"
+      - name: "ExprTemplates"
+        exposed_as: "ekippx::dsl::ExprTemplates"
+        purpose: "expression-template based composition"
+      - name: "CustomLiterals"
+        exposed_as: "ekippx::dsl::CustomLiterals"
+        purpose: "user-defined literal style DSL entry points"
+      - name: "Memoization"
+        exposed_as: "ekippx::dsl::Memoization"
+        purpose: "cache parser or evaluator results"
+      - name: "LazyFeature"
+        exposed_as: "ekippx::dsl::Lazy"
+        purpose: "deferred evaluation and lazily composed nodes"
+      - name: "Monadic"
+        exposed_as: "ekippx::dsl::Monadic"
+        purpose: "bind/map-style sequencing for DSL computations"
+      - name: "ResultFeature"
+        exposed_as: "ekippx::dsl::Result"
+        purpose: "structured success/failure result propagation"
+      - name: "CombinatorParser"
+        exposed_as: "ekippx::dsl::CombinatorParser"
+        purpose: "parser combinator construction for native grammar rules"
+      - name: "TaskPipeline"
+        exposed_as: "ekippx::dsl::TaskPipeline"
+        purpose: "multi-stage execution or transformation pipelines"
+
+  structs:
+    - name: "SourceSpan"
+      description: "Optional EkippX-facing source location wrapper for DSL nodes and parser results"
+      fields:
+        - { name: "file", type: "String" }
+        - { name: "line", type: "Size" }
+        - { name: "column", type: "Size" }
+
+    - name: "MatchResult"
+      description: "Structured pattern-match result for runtime/native rule composition"
+      fields:
+        - { name: "matched", type: "bool" }
+        - { name: "pattern_text", type: "StringView" }
+        - { name: "input", type: "StringView" }
+
+    - name: "RuleContext"
+      description: "Execution/binding context for native DSL rules inside EkippX"
+      fields:
+        - { name: "runtime", type: "ekippx::Context*" }
+        - { name: "source", type: "SourceSpan" }
+        - { name: "subject", type: "StringView" }
+
+    - name: "RewriteRule"
+      description: "Rule object pairing a matcher and transformer"
+      fields:
+        - { name: "name", type: "String" }
+        - { name: "enabled", type: "bool", default: true }
+
+    - name: "ParserResult"
+      description: "Native DSL parse/combinator outcome"
+      fields:
+        - { name: "ok", type: "bool" }
+        - { name: "message", type: "String" }
+
+  enums:
+    - name: "RuleKind"
+      values:
+        - "predicate"
+        - "pattern"
+        - "rewrite"
+        - "parser"
+        - "expression"
+        - "pipeline"
+
+    - name: "EvaluationMode"
+      values:
+        - "eager"
+        - "lazy"
+        - "memoized"
+
+    - name: "AstNodeKind"
+      values:
+        - "token"
+        - "literal"
+        - "identifier"
+        - "call"
+        - "operator"
+        - "sequence"
+        - "pipeline"
+        - "match_case"
+        - "rewrite_rule"
+        - "custom"
+
+  callback_types:
+    - name: "PredicateFn"
+      signature: "std::function<bool(const RuleContext&)>"
+      description: "Host-side lambda predicate for guards and filters"
+
+    - name: "TransformFn"
+      signature: "std::function<String(const RuleContext&)>"
+      description: "Host-side lambda transformer for rewrite/expansion actions"
+
+    - name: "ParserFn"
+      signature: "std::function<ParserResult(StringView, const RuleContext&)>"
+      description: "Native parser or combinator endpoint"
+
+    - name: "BuilderFn"
+      signature: "std::function<void(ekippx::Context&)>"
+      description: "Registers native DSL constructs into an EkippX context"
+
+  classes:
+    - name: "NativeDSL"
+      role: "Primary EkippX-facing CRTP root alias/wrapper for building embedded DSLs"
+      derives: "ekippx::dsl::DSL<Derived, Features...>"
+      notes:
+        - "Acts as the idiomatic public entry point in EkippX.hpp"
+        - "Should remain thin and map closely to the DSLtk substrate"
+
+    - name: "RuleBuilder"
+      role: "Fluent helper for constructing lambda-driven native DSL rules"
+      methods:
+        - "RuleBuilder& when_predicate(PredicateFn pred)"
+        - "RuleBuilder& when_pattern(StringView pattern_text)"
+        - "RuleBuilder& transform(TransformFn fn)"
+        - "RewriteRule build() const"
+
+    - name: "Matcher"
+      role: "Pattern and predicate composition facade"
+      methods:
+        - "template <FixedString S> static constexpr bool matches(StringView input)"
+        - "static auto make_predicate(auto&& fn)"
+      notes:
+        - "Backed by pattern<S>::matches and Operators::make_pred"
+
+    - name: "ParserBuilder"
+      role: "Combinator-oriented parser construction surface"
+      methods:
+        - "ParserBuilder& token(StringView name)"
+        - "ParserBuilder& sequence()"
+        - "ParserBuilder& choice()"
+        - "ParserBuilder& optional()"
+        - "ParserBuilder& many()"
+        - "ParserResult parse(StringView input) const"
+      notes:
+        - "Represents the EkippX-facing layer for the combinator parser feature family"
+
+    - name: "ASTBuilder"
+      role: "Typed AST construction helper for native syntax definitions"
+      methods:
+        - "auto node(AstNodeKind kind) -> ASTBuilder&"
+        - "auto child(ASTBuilder child_node) -> ASTBuilder&"
+        - "auto finish() const"
+
+    - name: "RewriteEngine"
+      role: "Rule-driven transformation facade for native DSL expressions or ASTs"
+      methods:
+        - "void add_rule(RewriteRule rule)"
+        - "String apply(StringView input) const"
+        - "void clear()"
+
+  free_functions:
+    - name: "make_pred"
+      signature: "template <typename F> constexpr auto make_pred(F&& f)"
+      source_mapping: "maps to operator feature predicate construction"
+      description: "Constructs a composable predicate object from a callable"
+
+    - name: "match"
+      signature: "template <typename Subject> constexpr auto match(Subject&& subject)"
+      description: "Begins a pattern-matching expression"
+      status: "planned public EkippX wrapper based on substrate pattern-match model"
+
+    - name: "when"
+      signature: "template <typename PatternOrPredicate, typename Action> constexpr auto when(PatternOrPredicate&&, Action&&)"
+      description: "Adds a guarded clause to a match expression"
+      status: "planned public EkippX wrapper based on substrate pattern-match model"
+
+    - name: "otherwise"
+      signature: "template <typename Action> constexpr auto otherwise(Action&&)"
+      description: "Adds a fallback clause to a match expression"
+      status: "planned public EkippX wrapper based on substrate pattern-match model"
+
+    - name: "define_dsl"
+      signature: "template <typename Builder> void define_dsl(ekippx::Context& ctx, Builder&& builder)"
+      description: "Registers native DSL constructs into an EkippX context via lambda"
+
+    - name: "define_rewrite"
+      signature: "template <typename Match, typename Transform> RewriteRule define_rewrite(Match&& match, Transform&& transform)"
+      description: "Creates a rewrite rule from callable parts"
+
+    - name: "define_parser"
+      signature: "template <typename Builder> auto define_parser(Builder&& builder)"
+      description: "Creates a parser/combinator definition"
+
+  pattern_matching:
+    substrate_basis:
+      - "compile-time pattern tags via pattern<FixedString>"
+      - "static matches(std::string_view) matching entry point"
+    public_shape:
+      - "ekippx::dsl::match(...)"
+      - "ekippx::dsl::when(...)"
+      - "ekippx::dsl::otherwise(...)"
+      - "ekippx::dsl::pattern<...>"
+    notes:
+      - "Pattern matching should support both compile-time pattern tags and lambda predicates"
+      - "Pattern clauses should be usable for macros, directives, and native grammar rules"
+
+  operator_model:
+    substrate_basis:
+      - "dsl::Operators"
+      - "dsl::Operators::Mixin<Derived>"
+      - "dsl::Operators::make_pred(F&&)"
+    public_shape:
+      - "Operator-enriched DSL types opt in through feature composition"
+      - "Callable predicates are first-class DSL building blocks"
+      - "Lambda-defined operators or guards are preferred over stringly APIs"
+    notes:
+      - "This is important for EkippX because macro behavior is lambda-heavy"
+
+  parser_model:
+    basis:
+      - "DSLtk forward-declares CombinatorParser"
+      - "User stated DSLtk is responsible for parser/combinatory parsing needs"
+    public_goals:
+      - "Express parser fragments as native C++ combinators"
+      - "Attach parsers to EkippX directives, macros, or language subgrammars"
+      - "Support lazy and memoized parsing when the feature set is enabled"
+
+  ast_model:
+    basis:
+      - "DSLtk forward-declares AST"
+    public_goals:
+      - "Represent native DSL syntax trees explicitly"
+      - "Enable downstream rewrite and transformation passes"
+      - "Keep AST facilities compatible with expression-template composition"
+
+  rewrite_model:
+    basis:
+      - "DSLtk forward-declares Rewrite"
+    public_goals:
+      - "Support rule-based transformation of tokens, ASTs, or expressions"
+      - "Allow pattern + lambda transform pairs"
+      - "Integrate with EkippX macro expansion and native syntax lowering"
+
+  literals_model:
+    basis:
+      - "DSLtk forward-declares CustomLiterals"
+    public_goals:
+      - "Permit literal-driven DSL entry points where appropriate"
+      - "Keep custom literal support optional and feature-gated"
+
+  integration_with_ekippx:
+    host_types:
+      - "ekippx::Context"
+      - "ekippx::MacroDefinition"
+      - "ekippx::Invocation"
+      - "ekippx::ExpandRequest"
+    integration_points:
+      - "Define macros using native DSL builders and lambdas"
+      - "Use parser combinators for directive/function argument syntax"
+      - "Use rewrite facilities for macro lowering and normalization"
+      - "Use pattern matching for dispatch and conditional macro behavior"
+    contract:
+      - "ekippx::dsl augments EkippX runtime semantics; it does not replace them"
+      - "The native DSL must remain embeddable inside ordinary C++ registration code"
+
+  examples:
+    - name: "basic_dsl_type"
+      code: |
+        struct MyDSL : ekippx::dsl::DSL<MyDSL, ekippx::dsl::Operators> {
+        };
+
+    - name: "compile_time_pattern"
+      code: |
+        using Digits = ekippx::dsl::pattern<"[0-9]+">;
+        static_assert(Digits::matches("12345"));
+
+    - name: "lambda_predicate"
+      code: |
+        auto pred = ekippx::dsl::make_pred([](const auto& ctx) {
+          return !ctx.subject.empty();
+        });
+
+    - name: "native_match_style"
+      code: |
+        auto rule =
+          ekippx::dsl::match(input)
+          | ekippx::dsl::when(ekippx::dsl::pattern<"foo">(), [] { return "bar"; })
+          | ekippx::dsl::otherwise([] { return "fallback"; });
+
+    - name: "attach_native_dsl"
+      code: |
+        ekippx::dsl::define_dsl(ctx, [](ekippx::Context& runtime) {
+          // register native rules, parsers, or rewrites here
+        });
+
+  compatibility:
+    source_compatibility: false
+    abi_compatibility: false
+    guarantees:
+      - "Public namespace is ekippx::dsl"
+      - "The DSL surface is exposed from EkippX.hpp"
+      - "The underlying substrate model follows DSLtk.hpp"
+    non_goals:
+      - "This manifest does not specify a standalone interpreter"
+      - "This manifest does not move the DSL into a separate header"
+      - "This manifest does not treat old ekipp.hpp as normative"
+
+  notes:
+    - "Pass 1 uses DSLtk combinator primitives for invocation parsing and leaves richer native DSL wrapping for later passes."
+    - "This manifest intentionally places the native DSL in EkippX.hpp under ekippx::dsl."
+    - "DSLtk.hpp is treated as the substrate and source of truth for the DSL construction model."
+    - "Confirmed substrate primitives include FixedString, DSL, Operators, and pattern."
+    - "Forward-declared feature families in DSLtk strongly shape the public EkippX DSL surface, but some exact signatures remain to be finalized."
+    - "The API is designed to stay lambda-first because EkippX macro definition heavily relies on lambdas."

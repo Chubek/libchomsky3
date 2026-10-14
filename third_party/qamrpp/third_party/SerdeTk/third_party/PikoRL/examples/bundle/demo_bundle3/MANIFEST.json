@@ -1,0 +1,28 @@
+{
+  "entrypoint": "entrypoint.sh",
+  "theme": {
+    "mode": "inline",
+    "inline": "theme.lua"
+  },
+  "bundle": {
+    "include": ["**"],
+    "exclude": []
+  },
+  "stub": {
+    "inline": null,
+    "file": null
+  },
+  "commands": [],
+  "trail": {
+    "enabled": false,
+    "files": []
+  },
+  "features": [
+    { "name": "colors",  "path": "colors.lua",  "required": false },
+    { "name": "history", "path": "history.lua", "required": false },
+    { "name": "macros",  "path": "macros.lua",  "required": false },
+    { "name": "syntax",  "path": "syntax.lua",  "required": false },
+    { "name": "theme",   "path": "theme.lua",   "required": false },
+    { "name": "web",     "path": "web.lua",     "required": false }
+  ]
+}

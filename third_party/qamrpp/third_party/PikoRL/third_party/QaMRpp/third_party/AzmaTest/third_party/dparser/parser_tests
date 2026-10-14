@@ -1,0 +1,66 @@
+#!/bin/bash
+shopt -s extglob
+
+# unset D_USE_FREELISTS for best valgrind results
+# setenv VALGRIND 'valgrind -q '
+VALGRIND=''
+
+keep=false
+for arg in "$@"; do
+  case "$arg" in
+    -k|--keep)
+      keep=true
+      ;;
+  esac
+done
+
+
+cp Makefile *.c *.h grammar.g tests
+cd tests
+make -s make_dparser
+make gram
+make -s make_dparser
+failed=0
+grammars=${1:-"*.test.g"}
+for g in $grammars ; do
+  rm -f sample_parser
+  if [ -f "$g.flags" ] ; then
+    flags=$(cat $g.flags)
+  else
+    flags=
+  fi
+  if [ -f "$g.parse_flags" ] ; then
+    parse_flags=$(cat $g.parse_flags)
+  else
+    parse_flags=
+  fi
+  $VALGRIND ./make_dparser $flags $g
+  make -s sample_parser SAMPLE_GRAMMAR=$(basename $g)
+  files="$g."*[0-9]
+  for t in $files ; do
+    if test -f "$t.flags" ; then
+      flags=$(cat $t.flags)
+    else
+      flags=
+    fi
+    $VALGRIND ./sample_parser $flags $parse_flags -v $t &> $t.out
+    diff $t.out $t.check
+    result=$?
+    if [ $result -ne 0 ]; then
+      echo $t "******** FAILED ********"
+      failed=$((failed + 1))
+    else
+      echo $t "PASSED"
+    fi
+  done
+done
+echo "---------------------------------------"
+if [ $failed -eq 0 ] ; then
+  echo "ALL tests PASSED"
+else
+  echo "********" $failed "test(s) FAILED *********"
+fi
+if [ $keep = false ] ; then
+  rm -f sample_parser D_BUILD_VERSION Makefile *.c *.h *.o make_dparser libdparse.a grammar.g
+fi
+cd ..

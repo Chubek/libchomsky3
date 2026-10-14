@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<enterprise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <employees>
+    <employee id="1001" active="true">
+      <name>
+        <first>Alice</first>
+        <last>Ng</last>
+      </name>
+      <roles>
+        <role priority="1">admin</role>
+        <role priority="2">developer</role>
+      </roles>
+      <contact>
+        <email primary="true">alice@example.com</email>
+        <phone country="+353">555-0101</phone>
+      </contact>
+    </employee>
+  </employees>
+
+  <departments>
+    <department code="RND">
+      <budget currency="EUR">1200000.50</budget>
+      <projects>
+        <project archived="false">
+          <title>QuantumCache</title>
+          <tags>
+            <tag>distributed</tag>
+            <tag>research</tag>
+          </tags>
+        </project>
+      </projects>
+    </department>
+  </departments>
+</enterprise>

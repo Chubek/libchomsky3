@@ -1,0 +1,4 @@
+socket stdin_channel = uds.connect("/tmp/shell.stdin");
+socket stdout_channel = uds.connect("/tmp/shell.stdout");
+
+pipe stdin_to_stdout = recv(stdin_channel) -> decode(shell_line) -> encode(shell_line) -> send(stdout_channel);
